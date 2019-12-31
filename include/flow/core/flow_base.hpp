@@ -67,15 +67,7 @@ public:
     constexpr auto fold(Func func) &&;
 
     template <typename Func>
-    constexpr auto for_each(Func func) &&
-    {
-        static_assert(std::is_invocable_v<Func&, item_t<Derived>>);
-        consume().fold([&func](bool, auto&& val) {
-            func(FLOW_FWD(val));
-            return true;
-        }, true);
-        return func;
-    }
+    constexpr auto for_each(Func func) &&;
 
     /// Consumes the flow, returning the number of items it contained
     template <typename = Derived>
