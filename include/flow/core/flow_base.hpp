@@ -44,24 +44,6 @@ public:
         return init;
     }
 
-    template <typename Func, typename Init>
-    constexpr auto fold(Func func, Init init) && -> Init
-    {
-        static_assert(std::is_invocable_v<Func&, item_t<Derived>, Init&&>,
-            "Incompatible callable passed to fold()");
-        static_assert(std::is_assignable_v<Init&, std::invoke_result_t<Func&, item_t<Derived>, Init&&>>,
-            "Accumulator of fold() is not assignable from the result of the function");
-
-        struct always {
-            Init val;
-            constexpr explicit operator bool() const { return true; }
-        };
-
-        return consume().try_fold([&func](always acc, auto m) {
-            return always{func(std::move(acc).val, *std::move(m))};
-        }, always{std::move(init)}).val;
-    }
-
     template <typename Func>
     constexpr auto try_for_each(Func func)
     {
@@ -71,12 +53,18 @@ public:
         }, result_t{});
     }
 
-    template <typename Func>
-    constexpr auto fold(Func func) &&
+    template <typename Adaptor, typename... Args>
+    constexpr auto apply(Adaptor&& adaptor, Args&&... args) && -> decltype(auto)
     {
-        static_assert(std::is_default_constructible_v<value_t<Derived>>);
-        return consume().fold(std::move(func), value_t<Derived>{});
+        return FLOW_FWD(adaptor)(consume(), FLOW_FWD(args)...);
     }
+
+    // Reductions of various kinds
+    template <typename Func, typename Init>
+    constexpr auto fold(Func func, Init init) && -> Init;
+
+    template <typename Func>
+    constexpr auto fold(Func func) &&;
 
     template <typename Func>
     constexpr auto for_each(Func func) &&

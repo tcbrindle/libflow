@@ -9,6 +9,7 @@
 #include <flow/op/collect.hpp>
 #include <flow/op/flatten.hpp>
 #include <flow/op/flat_map.hpp>
+#include <flow/op/fold.hpp>
 #include <flow/op/to_range.hpp>
 
 #include <flow/source/async.hpp>
