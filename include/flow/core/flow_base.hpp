@@ -5,9 +5,9 @@
 #include <flow/core/maybe.hpp>
 #include <flow/core/type_traits.hpp>
 
-#include <iosfwd>
-#include <string>
-#include <vector>
+#include <iosfwd>  // for stream_to()
+#include <string>  // for to_string()
+#include <vector>  // for to_vector()
 
 namespace flow {
 
@@ -69,23 +69,25 @@ public:
     template <typename Func>
     constexpr auto for_each(Func func) &&;
 
+    // Consumes the flow, returning the number of items for which @pred
+    // returned true
+    template <typename Pred>
+    constexpr auto count_if(Pred pred) && -> dist_t;
+
     /// Consumes the flow, returning the number of items it contained
-    template <typename = Derived>
     constexpr auto count() && -> dist_t
     {
-        return consume().fold([](dist_t count, auto&& /*unused*/) {
-            return count + 1;
-        }, dist_t{0});
+        return consume().count_if([](auto&& /*unused*/) { return true; });
     }
 
     /// Consumes the flow, returning a count of the number of items which
-    /// compared equal to @item
+    /// compared equal to @item, using comparator @cmp
     template <typename T, typename Cmp = std::equal_to<>>
     constexpr auto count(const T& item, Cmp cmp = {}) && -> dist_t
     {
-        return consume().fold([&item, &cmp] (dist_t count, auto&& val) {
-            return count + bool(cmp(val, item));
-        }, dist_t{0});
+        return consume().count_if([&item, &cmp] (auto&& val) {
+            return cmp(val, item);
+        });
     }
 
     template <typename T, typename Cmp = std::equal_to<>>
@@ -105,7 +107,7 @@ public:
     /// This function is short-circuiting: it will stop looking for an item
     /// as soon as it finds one
     template <typename T, typename Cmp = std::equal_to<>>
-    constexpr auto contains(const T& item, Cmp cmp = {})
+    constexpr auto contains(const T& item, Cmp cmp = {}) -> bool
     {
         return static_cast<bool>(consume().find(item, std::move(cmp)));
     }
@@ -155,7 +157,9 @@ public:
     template <typename Pred>
     constexpr auto all(Pred pred) -> bool
     {
-        static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>);
+        static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>,
+                      "Predicate must be callable with the Flow's item_type,"
+                      " and must return bool");
         return consume().try_fold([&pred](bool acc, auto m) {
             return acc && pred(*std::move(m));
         }, true);
@@ -166,7 +170,9 @@ public:
     template <typename Pred>
     constexpr auto none(Pred pred) -> bool
     {
-        static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>);
+        static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>,
+                      "Predicate must be callable with the Flow's item_type,"
+                      " and must return bool");
         return consume().all([&pred] (auto&& val) {
             return !pred(FLOW_FWD(val));
         });
@@ -415,7 +421,7 @@ public:
     constexpr auto flatten() &&;
 
     template <typename Func>
-    constexpr auto flat_map(Func func   ) &&;
+    constexpr auto flat_map(Func func) &&;
 
     template <typename Flow>
     constexpr auto zip_with(Flow other) &&

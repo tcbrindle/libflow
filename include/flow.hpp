@@ -7,6 +7,7 @@
 
 #include <flow/op/adapt.hpp>
 #include <flow/op/collect.hpp>
+#include <flow/op/count_if.hpp>
 #include <flow/op/flatten.hpp>
 #include <flow/op/flat_map.hpp>
 #include <flow/op/fold.hpp>

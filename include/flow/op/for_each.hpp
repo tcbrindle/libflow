@@ -6,22 +6,11 @@
 
 namespace flow {
 
-namespace detail {
-
-struct for_each_op {
-
-    template <typename Flow, typename Func>
-    constexpr auto operator()(Flow flow, Func func) const
-    {
-        static_assert(is_flow<Flow>,
-            "First argument to flow::for_each() must be a Flow");
-        return std::move(flow).for_each(std::move(func));
-    }
+inline constexpr auto for_each = [](auto flow, auto func) {
+    static_assert(is_flow<decltype(flow)>,
+        "First argument to flow::for_each() must be a Flow");
+    return std::move(flow).for_each(std::move(func));
 };
-
-}
-
-inline constexpr auto for_each = detail::for_each_op{};
 
 template <typename Derived>
 template <typename Func>

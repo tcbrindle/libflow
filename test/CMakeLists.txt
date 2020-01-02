@@ -13,6 +13,7 @@ add_executable(test-libflow
 
     # Operations
     test_collect.cpp
+    test_count_if.cpp
     test_flatten.cpp
     test_for_each.cpp
     test_to.cpp
