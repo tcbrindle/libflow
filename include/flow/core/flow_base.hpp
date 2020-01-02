@@ -2,6 +2,7 @@
 #ifndef FLOW_CORE_FLOW_BASE_HPP_INCLUDED
 #define FLOW_CORE_FLOW_BASE_HPP_INCLUDED
 
+#include <flow/core/invoke.hpp>
 #include <flow/core/maybe.hpp>
 #include <flow/core/type_traits.hpp>
 
@@ -36,7 +37,7 @@ public:
     constexpr auto try_fold(Func func, Init init) -> Init
     {
         while (auto m = derived().next()) {
-            init = func(std::move(init), std::move(m));
+            init = invoke(func, std::move(init), std::move(m));
             if (!init) {
                 break;
             }
@@ -49,14 +50,14 @@ public:
     {
         using result_t = std::invoke_result_t<Func&, maybe<item_t<Derived>>&&>;
         return consume().try_fold([&func](auto&& e, auto m) {
-            return func(std::move(m));
+            return invoke(func, std::move(m));
         }, result_t{});
     }
 
     template <typename Adaptor, typename... Args>
     constexpr auto apply(Adaptor&& adaptor, Args&&... args) && -> decltype(auto)
     {
-        return FLOW_FWD(adaptor)(consume(), FLOW_FWD(args)...);
+        return invoke(FLOW_FWD(adaptor), consume(), FLOW_FWD(args)...);
     }
 
     // Reductions of various kinds
@@ -86,7 +87,7 @@ public:
     constexpr auto count(const T& item, Cmp cmp = {}) && -> dist_t
     {
         return consume().count_if([&item, &cmp] (auto&& val) {
-            return cmp(val, item);
+            return invoke(cmp, val, item);
         });
     }
 
@@ -99,7 +100,7 @@ public:
        };
 
        return consume().try_for_each([&item, &cmp](auto m) {
-             return cmp(*m, item) ? out{std::move(m)} : out{};
+             return invoke(cmp, *m, item) ? out{std::move(m)} : out{};
        }).val;
     }
 
@@ -135,7 +136,7 @@ public:
     {
         return consume().next().map([this, &cmp] (auto&& init) {
           return consume().fold([&cmp](auto&& val, auto&& acc) -> decltype(auto) {
-            return cmp(val, acc) ? FLOW_FWD(val) : FLOW_FWD(acc);
+            return invoke(cmp, val, acc) ? FLOW_FWD(val) : FLOW_FWD(acc);
           }, FLOW_FWD(init));
         });
     }
@@ -147,7 +148,7 @@ public:
     {
         return consume().next().map([this, &cmp] (auto&& init) {
             return consume().fold([&cmp](auto&& val, auto acc) {
-                return !cmp(val, acc) ? FLOW_FWD(val) : std::move(acc);
+                return !invoke(cmp, val, acc) ? FLOW_FWD(val) : std::move(acc);
             }, FLOW_FWD(init));
         });
     }
@@ -161,7 +162,7 @@ public:
                       "Predicate must be callable with the Flow's item_type,"
                       " and must return bool");
         return consume().try_fold([&pred](bool acc, auto m) {
-            return acc && pred(*std::move(m));
+            return acc && invoke(pred, *std::move(m));
         }, true);
     }
 
@@ -174,7 +175,7 @@ public:
                       "Predicate must be callable with the Flow's item_type,"
                       " and must return bool");
         return consume().all([&pred] (auto&& val) {
-            return !pred(FLOW_FWD(val));
+            return !invoke(pred, FLOW_FWD(val));
         });
     }
 
@@ -192,7 +193,7 @@ public:
     {
         return consume().try_fold([last = derived().next(), &cmp]
         (auto acc, auto next) mutable {
-            if (cmp(*next, *last)) {
+            if (invoke(cmp, *next, *last)) {
                 return false;
             } else {
                 last = std::move(next);
@@ -271,7 +272,7 @@ public:
             -> maybe<item_t<Derived>>
             {
                 while (auto o = self.next()) {
-                    if (pred(*o)) {
+                    if (invoke(pred, *o)) {
                         return o;
                     }
                 }
@@ -315,7 +316,7 @@ public:
         {
             while (auto m = self.next()) {
                 if (!done) {
-                    if (pred(*m)) {
+                    if (invoke(pred, *m)) {
                         continue;
                     } else {
                         done = true;
@@ -351,7 +352,7 @@ public:
                    done = false] () mutable -> maybe<item_t<Derived>> {
             if (!done) {
                 auto m = self.next();
-                if (pred(*m)) {
+                if (invoke(pred, *m)) {
                     return m;
                 } else {
                     done = true;

@@ -3,6 +3,7 @@
 #define FLOW_HPP_INCLUDED
 
 #include <flow/core/macros.hpp>
+#include <flow/core/invoke.hpp>
 #include <flow/core/flow_base.hpp>
 
 #include <flow/op/adapt.hpp>

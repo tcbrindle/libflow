@@ -2,6 +2,8 @@
 #ifndef FLOW_CORE_MAYBE_HPP_INCLUDED
 #define FLOW_CORE_MAYBE_HPP_INCLUDED
 
+#include <flow/core/invoke.hpp>
+
 #include <optional>
 
 namespace flow {
@@ -120,10 +122,10 @@ public:
 private:
     template <typename Self, typename F>
     static constexpr auto map_impl(Self&& self, F&& func)
-        -> maybe<decltype(FLOW_FWD(func)(*FLOW_FWD(self)))>
+        -> maybe<std::invoke_result_t<F, decltype(*FLOW_FWD(self))>>
     {
         if (self) {
-            return FLOW_FWD(func)(*FLOW_FWD(self));
+            return invoke(FLOW_FWD(func), *FLOW_FWD(self));
         }
         return {};
     }
@@ -154,22 +156,12 @@ struct maybe<T&> {
     constexpr auto reset() { ptr_ = nullptr; }
 
     explicit constexpr operator bool() const { return ptr_ != nullptr; }
-#if 0
-    template <typename Func>
-    constexpr auto map(Func&& func) -> maybe<std::invoke_result_t<Func, T&>>
-    {
-        if (ptr_) {
-            return {FLOW_FWD(func)(*ptr_)};
-        }
-        return {};
-    }
-#endif
 
     template <typename Func>
     constexpr auto map(Func&& func) const -> maybe<std::invoke_result_t<Func, T&>>
     {
         if (ptr_) {
-            return {FLOW_FWD(func)(*ptr_)};
+            return {invoke(FLOW_FWD(func), *ptr_)};
         }
         return {};
     }

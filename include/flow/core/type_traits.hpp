@@ -39,15 +39,7 @@ template <typename, typename = void>
 inline constexpr bool has_next = false;
 
 template <typename T>
-inline constexpr bool has_next<T, std::enable_if_t<
-    is_maybe<decltype(std::declval<T&>().next())>>> = true;
-
-template <typename, typename = void>
-inline constexpr bool has_length = false;
-
-template <typename T>
-inline constexpr bool has_length<T, std::enable_if_t<
-    std::is_same_v<decltype(std::declval<T const&>().length()), dist_t>>> = true;
+inline constexpr bool has_next<T, std::enable_if_t<is_maybe<next_t<T>>>> = true;
 
 } // namespace detail
 
