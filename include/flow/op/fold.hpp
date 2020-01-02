@@ -35,9 +35,9 @@ template <typename Derived>
 template <typename Func, typename Init>
 constexpr auto flow_base<Derived>::fold(Func func, Init init) && -> Init
 {
-    static_assert(std::is_invocable_v<Func&, item_t<Derived>, Init&&>,
+    static_assert(std::is_invocable_v<Func&, Init&&, item_t<Derived>>,
                   "Incompatible callable passed to fold()");
-    static_assert(std::is_assignable_v<Init&, std::invoke_result_t<Func&, item_t<Derived>, Init&&>>,
+    static_assert(std::is_assignable_v<Init&, std::invoke_result_t<Func&, Init&&, item_t<Derived>>>,
                   "Accumulator of fold() is not assignable from the result of the function");
 
     struct always {

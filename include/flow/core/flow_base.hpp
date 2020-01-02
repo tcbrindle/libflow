@@ -48,7 +48,7 @@ public:
     template <typename Func>
     constexpr auto try_for_each(Func func)
     {
-        using result_t = std::invoke_result_t<Func&, maybe<item_t<Derived>>&&>;
+        using result_t = std::invoke_result_t<Func&, next_t<Derived>&&>;
         return consume().try_fold([&func](auto&& e, auto m) {
             return invoke(func, std::move(m));
         }, result_t{});
@@ -68,28 +68,21 @@ public:
     constexpr auto fold(Func func) &&;
 
     template <typename Func>
-    constexpr auto for_each(Func func) &&;
+    constexpr auto for_each(Func func) && -> Func;
 
     // Consumes the flow, returning the number of items for which @pred
     // returned true
+    // Equivalent to `filter(pred).count()`.
     template <typename Pred>
     constexpr auto count_if(Pred pred) && -> dist_t;
 
     /// Consumes the flow, returning the number of items it contained
-    constexpr auto count() && -> dist_t
-    {
-        return consume().count_if([](auto&& /*unused*/) { return true; });
-    }
+    constexpr auto count() && -> dist_t;
 
     /// Consumes the flow, returning a count of the number of items which
     /// compared equal to @item, using comparator @cmp
     template <typename T, typename Cmp = std::equal_to<>>
-    constexpr auto count(const T& item, Cmp cmp = {}) && -> dist_t
-    {
-        return consume().count_if([&item, &cmp] (auto&& val) {
-            return invoke(cmp, FLOW_FWD(val), item);
-        });
-    }
+    constexpr auto count(const T& item, Cmp cmp = {}) && -> dist_t;
 
     template <typename T, typename Cmp = std::equal_to<>>
     constexpr auto find(const T& item, Cmp cmp = {})
@@ -161,8 +154,8 @@ public:
         static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>,
                       "Predicate must be callable with the Flow's item_type,"
                       " and must return bool");
-        return consume().try_fold([&pred](bool acc, auto m) {
-            return acc && invoke(pred, *std::move(m));
+        return consume().try_fold([&pred](bool /*unused*/, auto m) {
+            return invoke(pred, *std::move(m));
         }, true);
     }
 

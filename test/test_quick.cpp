@@ -8,9 +8,6 @@
 // FIXME: and I don't know why :-(
 constexpr bool test_quick()
 {
-    static_assert(flow::of{1, 1, 1}.count() == 3);
-    static_assert(flow::of{1, 1, 1}.count() == 3);
-    static_assert(flow::of{1, 1, 1}.count(1) == 3);
     static_assert(flow::of(1, 2, 3, 4, 5).min().value() == 1);
     static_assert(flow::of(1, 2, 3, 4, 5).max().value() == 5);
     static_assert(flow::of(1, 2, 3).sum() == 6);

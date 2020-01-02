@@ -14,7 +14,7 @@ inline constexpr auto for_each = [](auto flow, auto func) {
 
 template <typename Derived>
 template <typename Func>
-constexpr auto flow_base<Derived>::for_each(Func func) &&
+constexpr auto flow_base<Derived>::for_each(Func func) && -> Func
 {
     static_assert(std::is_invocable_v<Func&, item_t<Derived>>,
                   "Incompatible callable passed to for_each()");

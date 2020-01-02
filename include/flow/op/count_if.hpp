@@ -21,7 +21,7 @@ constexpr auto flow_base<Derived>::count_if(Pred pred) && -> dist_t
                   "Predicate must be callable with the Flow's item_type,"
                   " and must return bool");
     return consume().fold([&pred](dist_t count, auto&& val) {
-      return count + static_cast<dist_t>(pred(FLOW_FWD(val)));
+      return count + static_cast<dist_t>(invoke(pred, FLOW_FWD(val)));
     }, dist_t{0});
 }
 
