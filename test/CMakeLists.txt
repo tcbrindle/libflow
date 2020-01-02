@@ -8,6 +8,7 @@ add_executable(test-libflow
     # Sources
     test_any.cpp
     test_async.cpp
+    test_c_str.cpp
     test_empty.cpp
     test_from.cpp
     test_from_istream.cpp

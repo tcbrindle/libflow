@@ -18,6 +18,7 @@
 
 #include <flow/source/any.hpp>
 #include <flow/source/async.hpp>
+#include <flow/source/c_str.hpp>
 #include <flow/source/from.hpp>
 #include <flow/source/generate.hpp>
 #include <flow/source/ints.hpp>
