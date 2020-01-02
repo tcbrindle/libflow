@@ -87,7 +87,7 @@ public:
     constexpr auto count(const T& item, Cmp cmp = {}) && -> dist_t
     {
         return consume().count_if([&item, &cmp] (auto&& val) {
-            return invoke(cmp, val, item);
+            return invoke(cmp, FLOW_FWD(val), item);
         });
     }
 

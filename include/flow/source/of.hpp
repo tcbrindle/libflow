@@ -16,11 +16,18 @@ using array_flow = decltype(flow::from(std::declval<std::array<T, N>>()));
 }
 
 template <typename T, std::size_t N>
-struct of : detail::array_flow<T, N> {
+struct of : flow_base<of<T, N>> {
     template <typename... Args>
     constexpr explicit of(Args&&... args)
-        : detail::array_flow<T, N>(flow::from(std::array<T, N>{FLOW_FWD(args)...}))
+        : arr_(flow::from(std::array<T, N>{FLOW_FWD(args)...}))
     {}
+
+    constexpr auto next() -> maybe<T&> {
+        return arr_.next();
+    }
+
+private:
+    detail::array_flow<T, N> arr_;
 };
 
 template <typename T, typename... U>

@@ -15,6 +15,7 @@
 #include <flow/op/for_each.hpp>
 #include <flow/op/to_range.hpp>
 
+#include <flow/source/any.hpp>
 #include <flow/source/async.hpp>
 #include <flow/source/from.hpp>
 #include <flow/source/generate.hpp>

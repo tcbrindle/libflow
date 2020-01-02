@@ -32,12 +32,83 @@
 #endif
 
 
+#ifndef FLOW_CORE_INVOKE_HPP_INCLUDED
+#define FLOW_CORE_INVOKE_HPP_INCLUDED
+
+
+
+#include <functional> // for reference_wrapper :-(
+
+namespace flow {
+
+namespace detail {
+
+template <typename>
+inline constexpr bool is_reference_wrapper = false;
+
+template <typename R>
+inline constexpr bool is_reference_wrapper<std::reference_wrapper<R>> = true;
+
+struct invoke_fn {
+private:
+    template <typename T, typename Type, typename T1, typename... Args>
+    static constexpr auto impl(Type T::* f, T1&& t1, Args&&... args) -> decltype(auto)
+    {
+        if constexpr (std::is_member_function_pointer_v<decltype(f)>) {
+            if constexpr (std::is_base_of_v<T, std::decay_t<T1>>) {
+                return (FLOW_FWD(t1).*f)(FLOW_FWD(args)...);
+            } else if constexpr (is_reference_wrapper<std::decay_t<T1>>) {
+                return (t1.get().*f)(FLOW_FWD(args)...);
+            } else {
+                return ((*FLOW_FWD(t1)).*f)(FLOW_FWD(args)...);
+            }
+        } else {
+            static_assert(std::is_member_object_pointer_v<decltype(f)>);
+            static_assert(sizeof...(args) == 0);
+            if constexpr (std::is_base_of_v<T, std::decay_t<T1>>) {
+                return FLOW_FWD(t1).*f;
+            } else if constexpr (is_reference_wrapper<std::decay_t<T1>>) {
+                return t1.get().*f;
+            } else {
+                return (*FLOW_FWD(t1)).*f;
+            }
+        }
+    }
+
+    template <typename F, typename... Args>
+    static constexpr auto impl(F&& f, Args&&... args) -> decltype(auto)
+    {
+        return FLOW_FWD(f)(FLOW_FWD(args)...);
+    }
+
+public:
+    template <typename F, typename... Args>
+    constexpr auto operator()(F&& func, Args&&... args) const
+        noexcept(std::is_nothrow_invocable_v<F, Args...>)
+        -> std::invoke_result_t<F, Args...>
+    {
+        return impl(FLOW_FWD(func), FLOW_FWD(args)...);
+    }
+};
+
+}
+
+inline constexpr auto invoke = detail::invoke_fn{};
+
+}
+
+#endif
+
+
 #ifndef FLOW_CORE_FLOW_BASE_HPP_INCLUDED
 #define FLOW_CORE_FLOW_BASE_HPP_INCLUDED
 
 
+
 #ifndef FLOW_CORE_MAYBE_HPP_INCLUDED
 #define FLOW_CORE_MAYBE_HPP_INCLUDED
+
+
 
 #include <optional>
 
@@ -151,10 +222,10 @@ public:
 private:
     template <typename Self, typename F>
     static constexpr auto map_impl(Self&& self, F&& func)
-        -> maybe<decltype(FLOW_FWD(func)(*FLOW_FWD(self)))>
+        -> maybe<std::invoke_result_t<F, decltype(*FLOW_FWD(self))>>
     {
         if (self) {
-            return FLOW_FWD(func)(*FLOW_FWD(self));
+            return invoke(FLOW_FWD(func), *FLOW_FWD(self));
         }
         return {};
     }
@@ -185,22 +256,12 @@ struct maybe<T&> {
     constexpr auto reset() { ptr_ = nullptr; }
 
     explicit constexpr operator bool() const { return ptr_ != nullptr; }
-#if 0
-    template <typename Func>
-    constexpr auto map(Func&& func) -> maybe<std::invoke_result_t<Func, T&>>
-    {
-        if (ptr_) {
-            return {FLOW_FWD(func)(*ptr_)};
-        }
-        return {};
-    }
-#endif
 
     template <typename Func>
     constexpr auto map(Func&& func) const -> maybe<std::invoke_result_t<Func, T&>>
     {
         if (ptr_) {
-            return {FLOW_FWD(func)(*ptr_)};
+            return {invoke(FLOW_FWD(func), *ptr_)};
         }
         return {};
     }
@@ -296,15 +357,7 @@ template <typename, typename = void>
 inline constexpr bool has_next = false;
 
 template <typename T>
-inline constexpr bool has_next<T, std::enable_if_t<
-    is_maybe<decltype(std::declval<T&>().next())>>> = true;
-
-template <typename, typename = void>
-inline constexpr bool has_length = false;
-
-template <typename T>
-inline constexpr bool has_length<T, std::enable_if_t<
-    std::is_same_v<decltype(std::declval<T const&>().length()), dist_t>>> = true;
+inline constexpr bool has_next<T, std::enable_if_t<is_maybe<next_t<T>>>> = true;
 
 } // namespace detail
 
@@ -319,8 +372,9 @@ inline constexpr bool is_flow
 #endif
 
 
-#include <iosfwd>
-#include <vector>
+#include <iosfwd>  // for stream_to()
+#include <string>  // for to_string()
+#include <vector>  // for to_vector()
 
 namespace flow {
 
@@ -349,7 +403,7 @@ public:
     constexpr auto try_fold(Func func, Init init) -> Init
     {
         while (auto m = derived().next()) {
-            init = func(std::move(init), std::move(m));
+            init = invoke(func, std::move(init), std::move(m));
             if (!init) {
                 break;
             }
@@ -357,68 +411,50 @@ public:
         return init;
     }
 
-    template <typename Func, typename Init>
-    constexpr auto fold(Func func, Init init) && -> Init
-    {
-        static_assert(std::is_invocable_v<Func&, item_t<Derived>, Init&&>,
-            "Incompatible callable passed to fold()");
-        static_assert(std::is_assignable_v<Init&, std::invoke_result_t<Func&, item_t<Derived>, Init&&>>,
-            "Accumulator of fold() is not assignable from the result of the function");
-
-        struct always {
-            Init val;
-            constexpr explicit operator bool() const { return true; }
-        };
-
-        return consume().try_fold([&func](always acc, auto m) {
-            return always{func(std::move(acc).val, *std::move(m))};
-        }, always{std::move(init)}).val;
-    }
-
     template <typename Func>
     constexpr auto try_for_each(Func func)
     {
         using result_t = std::invoke_result_t<Func&, maybe<item_t<Derived>>&&>;
         return consume().try_fold([&func](auto&& e, auto m) {
-            return func(std::move(m));
+            return invoke(func, std::move(m));
         }, result_t{});
     }
 
-    template <typename Func>
-    constexpr auto fold(Func func) &&
+    template <typename Adaptor, typename... Args>
+    constexpr auto apply(Adaptor&& adaptor, Args&&... args) && -> decltype(auto)
     {
-        static_assert(std::is_default_constructible_v<value_t<Derived>>);
-        return consume().fold(std::move(func), value_t<Derived>{});
+        return invoke(FLOW_FWD(adaptor), consume(), FLOW_FWD(args)...);
     }
 
+    // Reductions of various kinds
+    template <typename Func, typename Init>
+    constexpr auto fold(Func func, Init init) && -> Init;
+
     template <typename Func>
-    constexpr auto for_each(Func func) &&
-    {
-        static_assert(std::is_invocable_v<Func&, item_t<Derived>>);
-        consume().fold([&func](bool, auto&& val) {
-            func(FLOW_FWD(val));
-            return true;
-        }, true);
-        return func;
-    }
+    constexpr auto fold(Func func) &&;
+
+    template <typename Func>
+    constexpr auto for_each(Func func) &&;
+
+    // Consumes the flow, returning the number of items for which @pred
+    // returned true
+    template <typename Pred>
+    constexpr auto count_if(Pred pred) && -> dist_t;
 
     /// Consumes the flow, returning the number of items it contained
-    template <typename = Derived>
     constexpr auto count() && -> dist_t
     {
-        return consume().fold([](dist_t count, auto&& /*unused*/) {
-            return count + 1;
-        }, dist_t{0});
+        return consume().count_if([](auto&& /*unused*/) { return true; });
     }
 
     /// Consumes the flow, returning a count of the number of items which
-    /// compared equal to @item
+    /// compared equal to @item, using comparator @cmp
     template <typename T, typename Cmp = std::equal_to<>>
     constexpr auto count(const T& item, Cmp cmp = {}) && -> dist_t
     {
-        return consume().fold([&item, &cmp] (dist_t count, auto&& val) {
-            return count + bool(cmp(val, item));
-        }, dist_t{0});
+        return consume().count_if([&item, &cmp] (auto&& val) {
+            return invoke(cmp, val, item);
+        });
     }
 
     template <typename T, typename Cmp = std::equal_to<>>
@@ -430,7 +466,7 @@ public:
        };
 
        return consume().try_for_each([&item, &cmp](auto m) {
-             return cmp(*m, item) ? out{std::move(m)} : out{};
+             return invoke(cmp, *m, item) ? out{std::move(m)} : out{};
        }).val;
     }
 
@@ -438,7 +474,7 @@ public:
     /// This function is short-circuiting: it will stop looking for an item
     /// as soon as it finds one
     template <typename T, typename Cmp = std::equal_to<>>
-    constexpr auto contains(const T& item, Cmp cmp = {})
+    constexpr auto contains(const T& item, Cmp cmp = {}) -> bool
     {
         return static_cast<bool>(consume().find(item, std::move(cmp)));
     }
@@ -466,7 +502,7 @@ public:
     {
         return consume().next().map([this, &cmp] (auto&& init) {
           return consume().fold([&cmp](auto&& val, auto&& acc) -> decltype(auto) {
-            return cmp(val, acc) ? FLOW_FWD(val) : FLOW_FWD(acc);
+            return invoke(cmp, val, acc) ? FLOW_FWD(val) : FLOW_FWD(acc);
           }, FLOW_FWD(init));
         });
     }
@@ -478,7 +514,7 @@ public:
     {
         return consume().next().map([this, &cmp] (auto&& init) {
             return consume().fold([&cmp](auto&& val, auto acc) {
-                return !cmp(val, acc) ? FLOW_FWD(val) : std::move(acc);
+                return !invoke(cmp, val, acc) ? FLOW_FWD(val) : std::move(acc);
             }, FLOW_FWD(init));
         });
     }
@@ -488,9 +524,11 @@ public:
     template <typename Pred>
     constexpr auto all(Pred pred) -> bool
     {
-        static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>);
+        static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>,
+                      "Predicate must be callable with the Flow's item_type,"
+                      " and must return bool");
         return consume().try_fold([&pred](bool acc, auto m) {
-            return acc && pred(*std::move(m));
+            return acc && invoke(pred, *std::move(m));
         }, true);
     }
 
@@ -499,9 +537,11 @@ public:
     template <typename Pred>
     constexpr auto none(Pred pred) -> bool
     {
-        static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>);
+        static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>,
+                      "Predicate must be callable with the Flow's item_type,"
+                      " and must return bool");
         return consume().all([&pred] (auto&& val) {
-            return !pred(FLOW_FWD(val));
+            return !invoke(pred, FLOW_FWD(val));
         });
     }
 
@@ -519,7 +559,7 @@ public:
     {
         return consume().try_fold([last = derived().next(), &cmp]
         (auto acc, auto next) mutable {
-            if (cmp(*next, *last)) {
+            if (invoke(cmp, *next, *last)) {
                 return false;
             } else {
                 last = std::move(next);
@@ -598,7 +638,7 @@ public:
             -> maybe<item_t<Derived>>
             {
                 while (auto o = self.next()) {
-                    if (pred(*o)) {
+                    if (invoke(pred, *o)) {
                         return o;
                     }
                 }
@@ -642,7 +682,7 @@ public:
         {
             while (auto m = self.next()) {
                 if (!done) {
-                    if (pred(*m)) {
+                    if (invoke(pred, *m)) {
                         continue;
                     } else {
                         done = true;
@@ -678,7 +718,7 @@ public:
                    done = false] () mutable -> maybe<item_t<Derived>> {
             if (!done) {
                 auto m = self.next();
-                if (pred(*m)) {
+                if (invoke(pred, *m)) {
                     return m;
                 } else {
                     done = true;
@@ -748,7 +788,7 @@ public:
     constexpr auto flatten() &&;
 
     template <typename Func>
-    constexpr auto flat_map(Func func   ) &&;
+    constexpr auto flat_map(Func func) &&;
 
     template <typename Flow>
     constexpr auto zip_with(Flow other) &&
@@ -1032,6 +1072,102 @@ constexpr auto flow_base<Derived>::collect() &&
 #endif
 
 
+#ifndef FLOW_OP_COUNT_IF_HPP_INCLUDED
+#define FLOW_OP_COUNT_IF_HPP_INCLUDED
+
+
+#ifndef FLOW_OP_FOLD_HPP_INCLUDED
+#define FLOW_OP_FOLD_HPP_INCLUDED
+
+
+
+namespace flow {
+
+namespace detail {
+
+struct fold_op {
+
+    template <typename Flow, typename Func, typename Init>
+    constexpr auto operator()(Flow flow, Func func, Init init) const
+    {
+        static_assert(is_flow<Flow>,
+                "First argument to flow::fold() must be a Flow");
+        return std::move(flow).fold(std::move(func), std::move(init));
+    }
+
+    template <typename Flow, typename Func>
+    constexpr auto operator()(Flow flow, Func func) const
+    {
+        static_assert(is_flow<Flow>,
+                      "First argument to flow::fold() must be a Flow");
+        return std::move(flow).fold(std::move(func));
+    }
+};
+
+} // namespace detail
+
+inline constexpr auto fold = detail::fold_op{};
+
+template <typename Derived>
+template <typename Func, typename Init>
+constexpr auto flow_base<Derived>::fold(Func func, Init init) && -> Init
+{
+    static_assert(std::is_invocable_v<Func&, item_t<Derived>, Init&&>,
+                  "Incompatible callable passed to fold()");
+    static_assert(std::is_assignable_v<Init&, std::invoke_result_t<Func&, item_t<Derived>, Init&&>>,
+                  "Accumulator of fold() is not assignable from the result of the function");
+
+    struct always {
+        Init val;
+        constexpr explicit operator bool() const { return true; }
+    };
+
+    return consume().try_fold([&func](always acc, auto m) {
+        return always{func(std::move(acc).val, *std::move(m))};
+    }, always{std::move(init)}).val;
+}
+
+template <typename Derived>
+template <typename Func>
+constexpr auto flow_base<Derived>::fold(Func func) &&
+{
+    static_assert(std::is_default_constructible_v<value_t<Derived>>,
+            "This flow's value type is not default constructible. "
+            "Use the fold(function, initial_value) overload instead");
+    return consume().fold(std::move(func), value_t<Derived>{});
+}
+
+}
+
+#endif
+
+
+namespace flow {
+
+inline constexpr auto count_if = [](auto flow, auto pred)
+{
+    static_assert(is_flow<decltype(flow)>,
+        "First argument to flow::count_if must be a Flow");
+    return std::move(flow).count_if(std::move(pred));
+};
+
+template <typename Derived>
+template <typename Pred>
+constexpr auto flow_base<Derived>::count_if(Pred pred) && -> dist_t
+{
+    static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>,
+                  "Predicate must be callable with the Flow's item_type,"
+                  " and must return bool");
+    return consume().fold([&pred](dist_t count, auto&& val) {
+      return count + static_cast<dist_t>(pred(FLOW_FWD(val)));
+    }, dist_t{0});
+}
+
+} // namespace flow
+
+#endif
+
+
 #ifndef FLOW_OP_FLATTEN_HPP_INCLUDED
 #define FLOW_OP_FLATTEN_HPP_INCLUDED
 
@@ -1145,6 +1281,39 @@ constexpr auto flow_base<Derived>::flat_map(Func func) &&
 
 
 
+#ifndef FLOW_OP_FOR_EACH_HPP_INCLUDED
+#define FLOW_OP_FOR_EACH_HPP_INCLUDED
+
+
+
+namespace flow {
+
+inline constexpr auto for_each = [](auto flow, auto func) {
+    static_assert(is_flow<decltype(flow)>,
+        "First argument to flow::for_each() must be a Flow");
+    return std::move(flow).for_each(std::move(func));
+};
+
+template <typename Derived>
+template <typename Func>
+constexpr auto flow_base<Derived>::for_each(Func func) &&
+{
+    static_assert(std::is_invocable_v<Func&, item_t<Derived>>,
+                  "Incompatible callable passed to for_each()");
+    consume().fold([&func](bool, auto&& val) {
+      (void) func(FLOW_FWD(val));
+      return true;
+    }, true);
+    return func;
+}
+
+}
+
+#endif
+
+
+
+
 
 #ifndef FLOW_SOURCE_ASYNC_HPP_INCLUDED
 #define FLOW_SOURCE_ASYNC_HPP_INCLUDED
@@ -1225,13 +1394,13 @@ struct async : flow_base<async<T>>
         return {};
     }
 
-    async(async&& other)
+    async(async&& other) noexcept
         : coro(std::move(other).coro)
     {
         other.coro = nullptr;
     }
 
-    async& operator=(async&& other)
+    async& operator=(async&& other) noexcept
     {
         std::swap(coro, other.coro);
     }
