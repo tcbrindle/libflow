@@ -78,13 +78,13 @@ struct async : flow_base<async<T>>
         return {};
     }
 
-    async(async&& other)
+    async(async&& other) noexcept
         : coro(std::move(other).coro)
     {
         other.coro = nullptr;
     }
 
-    async& operator=(async&& other)
+    async& operator=(async&& other) noexcept
     {
         std::swap(coro, other.coro);
     }

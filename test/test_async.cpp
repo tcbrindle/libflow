@@ -46,7 +46,7 @@ auto pythagorean_triples() -> flow::async<triple>
 
 TEST_CASE("async names", "[flow.async]")
 {
-    std::vector<std::string> vec = get_names().to_vector();
+    std::vector<std::string> vec = get_names().collect();
 
     REQUIRE(vec.size() == 3);
     REQUIRE((vec == std::vector<std::string>{"Adam", "Barbara", "Clive"}));
