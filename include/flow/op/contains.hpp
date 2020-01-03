@@ -10,13 +10,19 @@ template <typename Derived>
 template <typename T, typename Cmp>
 constexpr auto flow_base<Derived>::contains(const T &item, Cmp cmp) -> bool
 {
-    return static_cast<bool>(derived().find(item, std::move(cmp)));
+    static_assert(std::is_invocable_v<Cmp&, item_t<Derived>&, const T&>,
+        "Incompatible comparator used with contains()");
+    static_assert(std::is_invocable_r_v<bool, Cmp&, item_t<Derived>&, const T&>,
+        "Comparator used with contains() must return bool");
+
+    return !derived().try_fold([&item, &cmp](bool, auto m) -> bool {
+        return !invoke(cmp, *m, item);
+    }, true);
 }
 
 namespace detail {
 
 struct contains_op {
-
     template <typename Flow, typename T, typename Cmp = std::equal_to<>>
     constexpr auto operator()(Flow&& flow, const T& item, Cmp cmp = Cmp{}) const -> bool
     {

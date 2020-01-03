@@ -11,7 +11,7 @@ constexpr bool test_empty()
     static_assert(!E{}.advance(1));
     static_assert(E{}.count() == 0);
     static_assert(E{}.count(1) == 0);
-    static_assert(E{}.contains(1) == 0);
+    static_assert(!E{}.contains(1));
     static_assert(!E{}.min());
     static_assert(!E{}.max());
     static_assert(E{}.sum() == 0);

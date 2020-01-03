@@ -11,7 +11,7 @@ template <typename T, typename Cmp>
 constexpr auto flow_base<Derived>::find(const T& item, Cmp cmp)
 {
     struct out {
-        maybe<item_t<Derived>> val{};
+        next_t<Derived> val{};
         constexpr explicit operator bool() const { return !val; }
     };
 

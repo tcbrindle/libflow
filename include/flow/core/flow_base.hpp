@@ -16,8 +16,7 @@ template <typename Derived>
 struct flow_base {
 private:
     constexpr auto derived() & -> Derived& { return static_cast<Derived&>(*this); }
-    constexpr auto derived() && -> Derived&& { return static_cast<Derived&&>(*this); }
-    constexpr auto consume() -> Derived&& { return std::move(*this).derived(); }
+    constexpr auto consume() -> Derived&& { return static_cast<Derived&&>(*this); }
 
 protected:
     ~flow_base() = default;
@@ -33,6 +32,24 @@ public:
         return derived().next();
     }
 
+    /// Short-circuiting left fold operation.
+    ///
+    /// Given a function @func and an initial value @init, repeatedly calls
+    /// `func(std::move(init), next())` and assigns the result to @init. If
+    /// @init then evaluates to `false`, it immediately exits, returning
+    /// the accumulated value. For an empty flow, it simply returns the initial
+    /// value.
+    ///
+    /// Note that the type of the second parameter to @func differs from plain
+    /// `fold()`: this version takes a `maybe`, which `fold()` unwraps for
+    /// convenience.
+    ///
+    /// Because this function is short-circuiting, the flow may be restarted
+    /// after it has returned and the remaining items (if any) may be processed.
+    ///
+    /// This is the lowest-level reduction operation, on which all the other
+    /// reductions are (eventually) based. For most user code, one of the
+    /// higher-level operations is usually more convenient.
     template <typename Func, typename Init>
     constexpr auto try_fold(Func func, Init init) -> Init
     {
@@ -45,11 +62,31 @@ public:
         return init;
     }
 
+    /// Short-circuiting version of for_each().
+    ///
+    /// Given a unary function @func, repeatedly calls `func(next())`. If the
+    /// return value of the function evaluates to `false`, it immediately exits,
+    /// providing the last function return value.
+    ///
+    /// `try_for_each()` requires that the return type of @func is "bool-ish":
+    /// that it is default-constructible, move-assignable, and contextually
+    /// convertible to `bool`.
+    ///
+    /// Note that the type of the parameter to @func differs from plain
+    /// `for_each()`: this version takes a `maybe`, which `for_each()` unwraps for
+    /// convenience.
+    ///
+    /// Because this function is short-circuiting, the flow may be restarted
+    /// after it has returned and the remaining items (if any) may be processed.
+    ///
+    /// This is a low-level operation, effectively a stateless version of
+    /// `try_for_each()`. For most user code, higher-level functions such as
+    /// `for_each()` will be more convenient.
     template <typename Func>
     constexpr auto try_for_each(Func func)
     {
         using result_t = std::invoke_result_t<Func&, next_t<Derived>&&>;
-        return derived().try_fold([&func](auto&& e, auto m) {
+        return derived().try_fold([&func](auto const& /*unused*/, auto m) -> decltype(auto) {
             return invoke(func, std::move(m));
         }, result_t{});
     }
@@ -60,10 +97,20 @@ public:
         return invoke(FLOW_FWD(adaptor), consume(), FLOW_FWD(args)...);
     }
 
-    // Reductions of various kinds
+    /// Consumes the flow, performing a functional left fold operation.
+    ///
+    /// Given a callable @func and an initial value @init, calls
+    /// `init = func(std::move(init), i)` for each item `i` in the flow. Once
+    /// the flow is exhausted, it returns the value accumulated in @init.
+    ///
+    /// This is the same operation as `std::accumulate`.
     template <typename Func, typename Init>
     constexpr auto fold(Func func, Init init) && -> Init;
 
+    /// Consumes the flow, performing a functional left fold operation.
+    ///
+    /// This is a convenience overload, equivalent to `fold(func, value_t{})`
+    /// where `value_t` is the value type of the flow.
     template <typename Func>
     constexpr auto fold(Func func) &&;
 
