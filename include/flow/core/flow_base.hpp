@@ -101,10 +101,7 @@ public:
     /// return immediately after finding an item, after which the flow can be
     /// restarted and the remaining items (if any) can be processed.
     template <typename T, typename Cmp = std::equal_to<>>
-    constexpr auto contains(const T& item, Cmp cmp = {}) -> bool
-    {
-        return static_cast<bool>(consume().find(item, std::move(cmp)));
-    }
+    constexpr auto contains(const T& item, Cmp cmp = {}) -> bool;
 
     /// Consumes the flow, returning the sum of elements using `operator+`
     template <typename D = Derived>

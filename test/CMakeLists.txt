@@ -16,6 +16,7 @@ add_executable(test-libflow
 
     # Operations
     test_collect.cpp
+    test_contains.cpp
     test_count.cpp
     test_count_if.cpp
     test_find.cpp

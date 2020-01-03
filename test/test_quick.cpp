@@ -21,13 +21,6 @@ constexpr bool test_quick()
     static_assert(!flow::of(1, 1, 2).none(is_one));
     static_assert(flow::of(1, 2, 3).any(is_one));
 
-    static_assert(flow::of{2, 2, 2, 1, 2, 2, 2}.contains(1));
-
-    static_assert(flow::of{2, 1, 2, 1, 2, 1, 2}.filter(is_one).count() == 3);
-
-    constexpr std::array arr{2, 1, 2};
-    static_assert(std::addressof(flow::from(arr).find(1).value()) == arr.data() + 1);
-
     static_assert(flow::of{1, 1, 1}.is_sorted());
     static_assert(!flow::of{1, 2, 1}.is_sorted());
 

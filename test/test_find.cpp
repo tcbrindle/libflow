@@ -55,7 +55,7 @@ constexpr bool test_member_find()
 }
 static_assert(test_member_find());
 
-TEST_CASE("find() member basic", "[flow.find]")
+TEST_CASE("find() member", "[flow.find]")
 {
     REQUIRE(test_member_find());
 }
