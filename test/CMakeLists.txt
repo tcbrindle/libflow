@@ -18,6 +18,7 @@ add_executable(test-libflow
     test_collect.cpp
     test_count.cpp
     test_count_if.cpp
+    test_find.cpp
     test_flatten.cpp
     test_for_each.cpp
     test_to.cpp

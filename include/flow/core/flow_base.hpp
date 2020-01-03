@@ -49,7 +49,7 @@ public:
     constexpr auto try_for_each(Func func)
     {
         using result_t = std::invoke_result_t<Func&, next_t<Derived>&&>;
-        return consume().try_fold([&func](auto&& e, auto m) {
+        return derived().try_fold([&func](auto&& e, auto m) {
             return invoke(func, std::move(m));
         }, result_t{});
     }
@@ -70,9 +70,9 @@ public:
     template <typename Func>
     constexpr auto for_each(Func func) && -> Func;
 
-    // Consumes the flow, returning the number of items for which @pred
-    // returned true
-    // Equivalent to `filter(pred).count()`.
+    /// Consumes the flow, returning the number of items for which @pred
+    /// returned true
+    /// Equivalent to `filter(pred).count()`.
     template <typename Pred>
     constexpr auto count_if(Pred pred) && -> dist_t;
 
@@ -84,22 +84,22 @@ public:
     template <typename T, typename Cmp = std::equal_to<>>
     constexpr auto count(const T& item, Cmp cmp = {}) && -> dist_t;
 
+    /// Processes the flow until it finds an item that compares equal to
+    /// @item, using comparator @cmp.
+    /// If the item is not found, returns an empty `maybe`.
+    ///
+    /// Unlike most operations, this function is short-circuiting: it will
+    /// return immediately after finding an item, after which the flow can be
+    /// restarted and the remaining items (if any) can be processed.
     template <typename T, typename Cmp = std::equal_to<>>
-    constexpr auto find(const T& item, Cmp cmp = {})
-    {
-        struct out {
-           maybe<item_t<Derived>> val{};
-           constexpr explicit operator bool() const { return !val; }
-       };
+    constexpr auto find(const T& item, Cmp cmp = {});
 
-       return consume().try_for_each([&item, &cmp](auto m) {
-             return invoke(cmp, *m, item) ? out{std::move(m)} : out{};
-       }).val;
-    }
-
-    /// Returns true if the flow contains the given item, or false otherwise
-    /// This function is short-circuiting: it will stop looking for an item
-    /// as soon as it finds one
+    /// Returns `true` if the flow contains an item which compares equal to
+    /// @item, using comparator @cmp.
+    ///
+    /// Unlike most operations, this function is short-circuiting: it will
+    /// return immediately after finding an item, after which the flow can be
+    /// restarted and the remaining items (if any) can be processed.
     template <typename T, typename Cmp = std::equal_to<>>
     constexpr auto contains(const T& item, Cmp cmp = {}) -> bool
     {
