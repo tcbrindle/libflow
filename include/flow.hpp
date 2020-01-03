@@ -16,6 +16,7 @@
 #include <flow/op/flat_map.hpp>
 #include <flow/op/fold.hpp>
 #include <flow/op/for_each.hpp>
+#include <flow/op/inspect.hpp>
 #include <flow/op/to_range.hpp>
 
 #include <flow/source/any.hpp>

@@ -295,6 +295,16 @@ public:
         }
     }
 
+    /// Consumes the flow, returning a new flow which yields the same items
+    /// but calls @func at each call to `next()`, passing it a const reference
+    /// to the item.
+    ///
+    /// `inspect()` is intended as an aid to debugging. It can be
+    /// inserted at any point in a pipeline, and allows examining the items
+    /// in the flow at that point (for example, to print them).
+    template <typename Func>
+    constexpr auto inspect(Func func) &&;
+
     template <typename Pred>
     constexpr auto filter(Pred pred) &&
     {
