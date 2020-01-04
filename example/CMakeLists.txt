@@ -1,0 +1,3 @@
+
+add_executable(example_random_ints random_ints.cpp)
+target_link_libraries(example_random_ints flow)
