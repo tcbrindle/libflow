@@ -5,6 +5,4 @@ target_link_libraries(make_single_header PRIVATE flow)
 
 if (CMAKE_COMPILER_IS_GNUCXX)
   target_link_libraries(make_single_header PRIVATE stdc++fs)
-elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  target_link_libraries(make_single_header PRIVATE c++fs)
 endif()
