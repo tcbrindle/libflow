@@ -6,6 +6,7 @@
 #include <flow/core/maybe.hpp>
 #include <flow/core/type_traits.hpp>
 
+#include <cassert>
 #include <iosfwd>  // for stream_to()
 #include <string>  // for to_string()
 #include <vector>  // for to_vector()
@@ -25,6 +26,7 @@ public:
     template <typename D = Derived>
     constexpr auto advance(dist_t dist) -> maybe<item_t<D>>
     {
+        assert(dist > 0);
         for (dist_t i = 0; i < dist - 1; i++) {
             derived().next();
         }
@@ -491,6 +493,14 @@ public:
     }
 
     constexpr auto enumerate() &&;
+
+    /// Consumes the flow, returning a new flow where each item is a flow
+    /// containing `size` items. The last chunk may have fewer items.
+    ///
+    /// Note that, to avoid copies or allocations, each inner flow is invalidated
+    /// once the parent flow is advanced. In other words, the inner flows must
+    /// be processed in order.
+    constexpr auto chunk(dist_t size) &&;
 
     template <std::size_t N>
     constexpr auto elements() &&

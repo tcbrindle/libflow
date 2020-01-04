@@ -7,6 +7,7 @@
 #include <flow/core/flow_base.hpp>
 
 #include <flow/op/adapt.hpp>
+#include <flow/op/chunk.hpp>
 #include <flow/op/collect.hpp>
 #include <flow/op/contains.hpp>
 #include <flow/op/count.hpp>
