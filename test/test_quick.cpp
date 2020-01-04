@@ -13,7 +13,7 @@ constexpr bool test_quick()
     static_assert(flow::of(1, 2, 3).sum() == 6);
     static_assert(flow::of(1, 2, 3).product() == 6);
 
-    auto is_one = [](int i) { return i == 1; };
+    constexpr auto is_one = flow::pred::eq(1);
 
     static_assert(flow::of(1, 1, 1).all(is_one));
     static_assert(!flow::of(1, 1, 2).all(is_one));

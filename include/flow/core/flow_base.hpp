@@ -4,6 +4,7 @@
 
 #include <flow/core/invoke.hpp>
 #include <flow/core/maybe.hpp>
+#include <flow/core/predicates.hpp>
 #include <flow/core/type_traits.hpp>
 
 #include <cassert>
@@ -213,9 +214,7 @@ public:
         static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>,
                       "Predicate must be callable with the Flow's item_type,"
                       " and must return bool");
-        return consume().all([&pred] (auto&& val) {
-            return !invoke(pred, FLOW_FWD(val));
-        });
+        return consume().all(pred::not_(pred));
     }
 
     /// Iterates over the flow, returning true if any element satisfies the predicate.

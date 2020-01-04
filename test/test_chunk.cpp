@@ -49,7 +49,7 @@ constexpr bool test_chunk()
         const bool b = flow::of(1, 1, 2, -2, 6, 0, 3, 1)
                            .chunk(3)
                            .map([](auto f) { return std::move(f).sum(); })
-                           .all([](auto i) { return i == 4; });
+                           .all(flow::pred::eq(4));
 
         if (!b) {
             return false;

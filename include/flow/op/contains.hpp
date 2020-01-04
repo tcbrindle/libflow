@@ -10,14 +10,14 @@ template <typename Derived>
 template <typename T, typename Cmp>
 constexpr auto flow_base<Derived>::contains(const T &item, Cmp cmp) -> bool
 {
-    static_assert(std::is_invocable_v<Cmp&, item_t<Derived>&, const T&>,
+    static_assert(std::is_invocable_v<Cmp&, value_t<Derived> const&, const T&>,
         "Incompatible comparator used with contains()");
-    static_assert(std::is_invocable_r_v<bool, Cmp&, item_t<Derived>&, const T&>,
+    static_assert(std::is_invocable_r_v<bool, Cmp&, value_t<Derived> const&, const T&>,
         "Comparator used with contains() must return bool");
 
-    return !derived().try_fold([&item, &cmp](bool, auto m) -> bool {
-        return !invoke(cmp, *m, item);
-    }, true);
+    return derived().any([&item, &cmp] (auto const& val) {
+          return invoke(cmp, val, item);
+    });
 }
 
 namespace detail {

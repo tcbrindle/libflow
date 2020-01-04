@@ -3,6 +3,7 @@ add_executable(test-libflow
     catch_main.cpp
     test_invoke.cpp
     test_maybe.cpp
+    test_predicates.cpp
     test_basic.cpp
 
     # Sources
