@@ -10,7 +10,7 @@ using namespace std::string_view_literals;
 constexpr bool test_member_nullary_count()
 {
     auto arr = std::array{1, 2, 3, 4, 5};
-    if (flow::from(arr).count() != arr.size()) {
+    if (flow::from(arr).count() != (flow::dist_t) arr.size()) {
         return false;
     }
 
@@ -28,7 +28,7 @@ TEST_CASE("member nullary count()", "[flow.count]")
 constexpr bool test_nonmember_nullary_count()
 {
     auto arr = std::array{1, 2, 3, 4, 5};
-    if (flow::count(flow::from(arr)) != arr.size()) {
+    if (flow::count(flow::from(arr)) != (flow::dist_t) arr.size()) {
         return false;
     }
 

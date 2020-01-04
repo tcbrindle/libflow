@@ -26,9 +26,9 @@ struct flatten_adaptor : flow_base<flatten_adaptor<Base>> {
             }
 
             if (auto m = inner_->next()) {
-                return std::move(m);
+                return m;
             } else {
-                inner_.reset();
+                inner_ = maybe<item_t<Base>>{};
             }
         }
     }

@@ -16,6 +16,8 @@ if (MSVC)
     target_compile_options(flow INTERFACE /permissive-)
 endif()
 
+set(CMAKE_CXX_EXTENSIONS Off)
+
 add_subdirectory(example)
 add_subdirectory(test)
 add_subdirectory(tools)

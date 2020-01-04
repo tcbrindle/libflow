@@ -67,7 +67,7 @@ constexpr bool test_raw_array()
     }
     return true;
 }
-static_assert(test_std_array());
+static_assert(test_raw_array());
 
 constexpr bool test_iter_sentinel_pair()
 {

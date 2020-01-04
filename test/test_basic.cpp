@@ -24,7 +24,7 @@ struct move_only {
     constexpr operator int() const { return i; }
 };
 
-template <typename T, std::size_t N>
+template <typename T, int N>
 struct test_flow : flow::flow_base<test_flow<T, N>> {
 
     constexpr test_flow()
@@ -141,6 +141,7 @@ TEST_CASE("modifying a container while iterating", "[flow.basic]")
     int val = 1;
 
     FLOW_FOR(int i, flow::from(vec)) {
+        (void) i; // avoid unused variable warning
         if (val < 5) {
             vec.push_back(val++);
             vec.shrink_to_fit();

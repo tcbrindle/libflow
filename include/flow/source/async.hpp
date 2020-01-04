@@ -10,8 +10,6 @@
 
 #include <experimental/coroutine>
 
-#include <iostream>
-
 namespace flow {
 
 template <typename T>

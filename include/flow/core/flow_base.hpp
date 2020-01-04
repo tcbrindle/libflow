@@ -231,7 +231,7 @@ public:
     constexpr auto is_sorted(Cmp cmp = Cmp{}) && -> bool
     {
         return consume().try_fold([last = derived().next(), &cmp]
-        (auto acc, auto next) mutable {
+        (auto const& /*unused*/, auto next) mutable {
             if (invoke(cmp, *next, *last)) {
                 return false;
             } else {

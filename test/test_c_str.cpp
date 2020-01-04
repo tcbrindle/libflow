@@ -26,7 +26,7 @@ constexpr bool test_c_str()
     }
 
     if (flow::c_str(u"embedded\0\0\0\0nulls").count() !=
-            std::char_traits<char16_t>::length(u"embedded")) {
+        (flow::dist_t) std::char_traits<char16_t>::length(u"embedded")) {
         return false;
     }
 

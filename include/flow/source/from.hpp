@@ -135,6 +135,7 @@ struct stl_ra_range_adaptor : flow_base<stl_ra_range_adaptor<R>> {
 
     constexpr auto advance(dist_t dist)
     {
+        assert(dist > 0);
         idx_ += dist - 1;
         return next();
     }

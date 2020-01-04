@@ -15,6 +15,7 @@ add_executable(test-libflow
     test_of.cpp
 
     # Operations
+    test_chunk.cpp
     test_collect.cpp
     test_contains.cpp
     test_count.cpp
@@ -30,6 +31,18 @@ add_executable(test-libflow
 )
 target_link_libraries(test-libflow flow)
 
+if (CMAKE_COMPILER_IS_GNUCXX)
+    target_compile_options(test-libflow PRIVATE -Wall -Wextra -pedantic
+        -ftemplate-backtrace-limit=0)
+endif()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(test-libflow PRIVATE -Wall -Wextra -pedantic
+        -Wno-missing-braces
+        -fcoroutines-ts
+        -ftemplate-backtrace-limit=0)
+endif()
+
 if (MSVC)
-    target_compile_options(test-libflow PUBLIC /await)
+    target_compile_options(test-libflow PRIVATE /await)
 endif()

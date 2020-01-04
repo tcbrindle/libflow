@@ -52,7 +52,7 @@ constexpr auto flow_base<Derived>::count(const T& item, Cmp cmp) && -> dist_t
     return consume().count_if([&item, &cmp] (auto const& val) {
         return invoke(cmp, item, val);
     });
-};
+}
 
 }
 
