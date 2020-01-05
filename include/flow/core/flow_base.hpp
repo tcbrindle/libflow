@@ -414,11 +414,13 @@ public:
     template <typename = Derived>
     constexpr auto step_by(dist_t stride) &&
     {
-        auto fn = [self = consume(), stride = stride] () mutable
+        auto fn = [self = consume(), stride = stride, first = true] () mutable
         {
-            auto m = self.next();
-            self.advance(stride - 1);
-            return m;
+            if (first) {
+                first = false;
+                return self.next();
+            }
+            return self.advance(stride);
         };
         return consume().adapt(std::move(fn));
     }
@@ -492,6 +494,9 @@ public:
     }
 
     constexpr auto enumerate() &&;
+
+    template <typename Key>
+    constexpr auto group_by(Key func) &&;
 
     /// Consumes the flow, returning a new flow where each item is a flow
     /// containing `size` items. The last chunk may have fewer items.
