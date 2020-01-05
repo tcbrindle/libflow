@@ -101,7 +101,8 @@ public:
     using std::optional<T>::operator*;
     using std::optional<T>::operator->;
     using std::optional<T>::value;
-    using std::optional<T>::reset;
+    using std::optional<T>::has_value;
+
 #ifndef _MSC_VER
     using std::optional<T>::operator bool;
 #else
@@ -109,6 +110,9 @@ public:
         return this->has_value();
     }
 #endif
+
+    // Override optional::reset to make it constexpr
+    constexpr void reset() { *this = maybe<T>{}; }
 
     template <typename Func>
     constexpr auto map(Func&& func) & { return maybe::map_impl(*this, FLOW_FWD(func)); }
@@ -155,7 +159,8 @@ struct maybe<T&> {
 
     constexpr auto reset() { ptr_ = nullptr; }
 
-    explicit constexpr operator bool() const { return ptr_ != nullptr; }
+    constexpr auto has_value() const -> bool { return ptr_ != nullptr; }
+    explicit constexpr operator bool() const { return has_value(); }
 
     template <typename Func>
     constexpr auto map(Func&& func) const -> maybe<std::invoke_result_t<Func, T&>>
@@ -187,8 +192,8 @@ struct maybe<T&&>
     constexpr T&& operator*() const && { return std::move(*ptr_); }
 
     constexpr auto reset() { ptr_ = nullptr; }
-
-    explicit constexpr operator bool() const { return ptr_ != nullptr; }
+    constexpr auto has_value() const -> bool { return ptr_ != nullptr; }
+    explicit constexpr operator bool() const { return has_value(); }
 
     template <typename Func>
     constexpr auto map(Func&& func) const & -> maybe<std::invoke_result_t<Func, T&>>

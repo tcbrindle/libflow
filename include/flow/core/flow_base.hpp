@@ -498,6 +498,12 @@ public:
     template <typename Key>
     constexpr auto group_by(Key func) &&;
 
+    template <typename D = Derived>
+    constexpr auto split(value_t<D> delimiter) &&
+    {
+        return consume().group_by(flow::pred::eq(std::move(delimiter))).step_by(2);
+    }
+
     /// Consumes the flow, returning a new flow where each item is a flow
     /// containing `size` items. The last chunk may have fewer items.
     ///
@@ -525,6 +531,26 @@ public:
     constexpr auto values() &&
     {
         return consume().template elements<1>();
+    }
+
+    template <typename Flow>
+    constexpr auto equal(Flow other) && -> bool
+    {
+        while (true) {
+            auto m1 = derived().next();
+            auto m2 = other.next();
+
+            if (!m1) {
+                return !static_cast<bool>(m2);
+            }
+            if (!m2) {
+                return false;
+            }
+
+            if (*m1 != *m2) {
+                return false;
+            }
+        }
     }
 
     template <typename = Derived>

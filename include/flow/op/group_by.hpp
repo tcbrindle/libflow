@@ -18,30 +18,38 @@ private:
     FLOW_NO_UNIQUE_ADDRESS Key key_;
     next_t<Base> next_item_{};
     maybe<key_type> last_key_{};
-    bool inner_exhausted_ = false;
+    bool group_exhausted_ = false;
 
-    struct inner_flow : flow_base<inner_flow>
+    struct group : flow_base<group>
     {
-        constexpr explicit inner_flow(group_by_adaptor& parent)
+        constexpr explicit group(group_by_adaptor& parent)
             : parent_(std::addressof(parent))
         {}
 
+        constexpr group(group&&) noexcept = default;
+        constexpr group& operator=(group&&) noexcept = default;
+
         constexpr auto next() -> next_t<Base>
         {
-            if (done_) {
-                parent_->inner_exhausted_ = true;
+            if (parent_->group_exhausted_) {
                 return {};
             }
 
+            if (!parent_->next_item_) {
+                if (!parent_->do_next()) {
+                    parent_->group_exhausted_ = true;
+                    return {};
+                }
+            }
+
             auto item = std::move(parent_->next_item_);
-            done_ = !parent_->do_next();
+            parent_->next_item_.reset();
 
             return item;
         }
 
     private:
         group_by_adaptor* parent_;
-        bool done_ = false;
     };
 
     constexpr auto do_next() -> bool
@@ -52,10 +60,13 @@ private:
             return false;
         }
 
-        auto next_key = invoke(key_, *next_item_);
-        bool ret = next_key == *last_key_;
-        last_key_ = next_key;
-        return ret;
+        auto&& next_key = invoke(key_, *next_item_);
+        if (next_key != *last_key_) {
+            last_key_ = FLOW_FWD(next_key);
+            return false;
+        }
+
+        return true;
     }
 
 public:
@@ -63,36 +74,38 @@ public:
         : base_(std::move(base)), key_(std::move(key))
     {}
 
-    constexpr auto next() -> maybe<inner_flow>
+    constexpr auto next() -> maybe<group>
     {
-        // Is this the first time we have been called?
-        if (!next_item_) {
+        // Is this the first time we're being called?
+        if (!last_key_) {
             next_item_ = base_.next();
+            if (next_item_) {
+                last_key_ = invoke(key_, *next_item_);
+                return group{*this};
+            } else {
+                return {};
+            }
+        }
+
+        // If the last group was exhausted, go ahead and start a new group
+        if (group_exhausted_) {
+            // Did we run out of items?
             if (!next_item_) {
                 return {};
             }
-            last_key_ = invoke(key_, *next_item_);
-            return inner_flow{*this};
+
+            group_exhausted_ = false;
+            return group{*this};
         }
 
-        // Last inner may not have been exhausted: fast-forward till
-        // we find the start of the next group
-        if (inner_exhausted_) {
-            inner_exhausted_ = false;
-        } else {
-            while (true) {
-                auto b = do_next();
-                if (!next_item_) {
-                    return {};
-                }
-                if (!b) {
-                    break;
-                }
-            }
+        // Last group was not exhausted: fast-forward to the next group
+        while (do_next())
+            ;
+        if (!next_item_) {
+            return {};
         }
+        return group{*this};
 
-        // We're good to go
-        return inner_flow{*this};
     }
 };
 

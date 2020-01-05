@@ -42,7 +42,40 @@ constexpr bool test_group_by() {
     {
         const auto cnt = flow::from(arr).group_by(not flow::pred::negative).count();
         if (cnt != 3) {
-        //    return false;
+            return false;
+        }
+    }
+
+    // Test partially consuming inner groups
+    {
+        const auto want = std::array{1, -2, 1};
+        std::array<int, 3> have{};
+
+        flow::from(arr)
+            .group_by(not flow::pred::negative)
+            .map([](auto f) { return f.next(); })
+            .deref()
+            .output_to(have.begin());
+
+        for (int i = 0; i < 3; i++) {
+            if (want[i] != have[i]) {
+                return false;
+            }
+        }
+    }
+
+    // Test multiple group_by()s in sequence
+    {
+        bool b = flow::from(arr)
+                .group_by(not flow::pred::negative)
+                .group_by([](auto&&) { return true; })
+                .flatten()
+                .map([](auto f) { return std::move(f).sum(); })
+                .map([](int i) { return i < 0 ? -i : i; })
+                .all(flow::pred::eq(4));
+
+        if (!b) {
+            return false;
         }
     }
 
@@ -50,69 +83,68 @@ constexpr bool test_group_by() {
 }
 static_assert(test_group_by());
 
-TEST_CASE("group_by", "[flow.group_by]")
+constexpr bool test_group_by2()
 {
-    std::vector vec = {1, 3, -2, -2, 1, 0, 1, 2};
+    using P = std::pair<int, int>;
 
-    auto groups = flow::from(vec)
-        .group_by(not flow::pred::negative)
-        .map([](auto f) { return std::move(f).to_vector(); })
-        .to_vector();
-
-    for (const auto& g : groups) {
-        for (int i : g) {
-            std::cout << i << ' ';
-        }
-        std::cout << "X\n";
-    }
-
-    auto sentence = "The quick brown fox jumped over the lazy dog";
-
-    //std::string sentence = "Hi";
-
-    auto words = flow::c_str(sentence)
-        .group_by(flow::pred::eq(' '))
-        .step_by(2)
-        .map([](auto f) { return std::move(f).to_string(); })
-        .to_vector();
-
-    std::cout << words.size() << '\n';
-
-    for (auto const& w : words) {
-        std::cout << w << " x\n";
-    }
-
-    {
-        auto sentence = "Hello Darkness My Old Friend";
-        flow::c_str(sentence)
-            .group_by(flow::pred::eq(' '))
-            .step_by(2)
-            .map([] (auto f) { return f.next(); })
-            .deref()
-            .write_to(std::cout, "");
-        std::cout << '\n';
-    }
-
-    {
-        auto alternate = [b = true] (auto&&) mutable {
-            return b = !b;
+    std::array<P, 12> v =
+        {
+            P{1,1},
+            {1,1},
+            {1,2},
+            {1,2},
+            {1,2},
+            {1,2},
+            {2,2},
+            {2,2},
+            {2,3},
+            {2,3},
+            {2,3},
+            {2,3}
         };
 
-        // Group by, map, group by -- this will break!
-        auto f = flow::c_str("Hello World From libFlow")
-            .group_by(flow::pred::eq(' '))
-            .chunk(2)
-            .flatten();
-
-        FLOW_FOR(auto i1, f) {
-            std::cout << "* ";
-            FLOW_FOR(char c, i1) {
-                std::cout << c << ' ';
-            }
-            std::cout << '\n';
-        }
+    //auto f1 = flow::from(v).group_by(&P::second);
+    auto f1 = flow::from(v).group_by([](auto& p) -> decltype(auto) { return p.second; });
+    bool success =
+        f1.next().value().equal(flow::of{P{1,1},P{1,1}}) &&
+        f1.next().value().equal(flow::of{P{1,2},P{1,2},P{1,2},P{1,2},P{2,2},P{2,2}}) &&
+        f1.next().value().equal(flow::of{P{2,3},P{2,3},P{2,3},P{2,3}}) &&
+        !(bool) f1.next();
+    if (!success) {
+        return false;
     }
 
+    //auto f2 = flow::from(v).group_by(&P::first);
+    auto f2 = flow::from(v).group_by([](auto& p) -> decltype(auto) { return p.first; });
+    success =
+        f2.next().value().equal(flow::of{P{1,1},P{1,1},P{1,2},P{1,2},P{1,2},P{1,2}}) &&
+        f2.next().value().equal(flow::of{P{2,2},P{2,2},P{2,3},P{2,3},P{2,3},P{2,3}}) &&
+        !(bool) f2.next();
+
+    return success;
+}
+static_assert(test_group_by2());
+
+TEST_CASE("group_by", "[flow.group_by]")
+{
+    REQUIRE(test_group_by());
+    REQUIRE(test_group_by2());
+
+    // Test over-consuming inner flows
+    {
+        std::vector const in{1, 3, -2, -2, 1, 0, 1, 2};
+        std::vector<int> out;
+
+        FLOW_FOR(auto f, flow::from(in).group_by(not flow::pred::negative)) {
+            FLOW_FOR(int i, f) {
+                out.push_back(i);
+            }
+            REQUIRE_FALSE(f.next().has_value());
+        }
+
+        REQUIRE(out == in);
+
+    }
 }
 
 }
