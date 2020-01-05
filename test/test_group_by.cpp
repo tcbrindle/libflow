@@ -3,8 +3,6 @@
 
 #include "catch.hpp"
 
-#include <iostream>
-
 namespace {
 
 constexpr bool test_group_by() {
@@ -79,6 +77,17 @@ constexpr bool test_group_by() {
         }
     }
 
+    // Test duplicate removal using group_by
+    {
+        bool b = flow::c_str("aabcccccccddde")
+            .group_by([](char c) { return c; })
+            .map([](auto f) { return *f.next(); })
+            .equal(flow::c_str("abcde"));
+        if (!b) {
+            return false;
+        }
+    }
+
     return true;
 }
 static_assert(test_group_by());
@@ -103,25 +112,36 @@ constexpr bool test_group_by2()
             {2,3}
         };
 
-    //auto f1 = flow::from(v).group_by(&P::second);
-    auto f1 = flow::from(v).group_by([](auto& p) -> decltype(auto) { return p.second; });
-    bool success =
-        f1.next().value().equal(flow::of{P{1,1},P{1,1}}) &&
-        f1.next().value().equal(flow::of{P{1,2},P{1,2},P{1,2},P{1,2},P{2,2},P{2,2}}) &&
-        f1.next().value().equal(flow::of{P{2,3},P{2,3},P{2,3},P{2,3}}) &&
-        !(bool) f1.next();
-    if (!success) {
-        return false;
+    {
+        // Should be able to do group_by(&P::second), but GCC doesn't
+        // seem to like PMDs in constexpr
+        auto f1 = flow::from(v).group_by([](P& p) -> int& { return p.second; });
+        bool success =
+            f1.next().value().equal(flow::of{P{1, 1}, P{1, 1}}) &&
+            f1.next().value().equal(flow::of{P{1, 2}, P{1, 2}, P{1, 2}, P{1, 2},
+                                             P{2, 2}, P{2, 2}}) &&
+            f1.next().value().equal(
+                flow::of{P{2, 3}, P{2, 3}, P{2, 3}, P{2, 3}}) &&
+            !(bool) f1.next();
+        if (!success) {
+            return false;
+        }
     }
 
-    //auto f2 = flow::from(v).group_by(&P::first);
-    auto f2 = flow::from(v).group_by([](auto& p) -> decltype(auto) { return p.first; });
-    success =
-        f2.next().value().equal(flow::of{P{1,1},P{1,1},P{1,2},P{1,2},P{1,2},P{1,2}}) &&
-        f2.next().value().equal(flow::of{P{2,2},P{2,2},P{2,3},P{2,3},P{2,3},P{2,3}}) &&
-        !(bool) f2.next();
+    {
+        auto f2 = flow::from(v).group_by([](P& p) -> int& { return p.first; });
+        bool success =
+            f2.next().value().equal(flow::of{P{1, 1}, P{1, 1}, P{1, 2}, P{1, 2},
+                                             P{1, 2}, P{1, 2}}) &&
+            f2.next().value().equal(flow::of{P{2, 2}, P{2, 2}, P{2, 3}, P{2, 3},
+                                             P{2, 3}, P{2, 3}}) &&
+            !(bool) f2.next();
+        if (!success) {
+            return false;
+        }
+    }
 
-    return success;
+    return true;
 }
 static_assert(test_group_by2());
 
@@ -143,7 +163,6 @@ TEST_CASE("group_by", "[flow.group_by]")
         }
 
         REQUIRE(out == in);
-
     }
 }
 
