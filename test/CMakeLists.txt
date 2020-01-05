@@ -26,6 +26,7 @@ add_executable(test-libflow
     test_for_each.cpp
     test_group_by.cpp
     test_inspect.cpp
+    test_interleave.cpp
     test_to.cpp
 
 

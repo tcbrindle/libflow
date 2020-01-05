@@ -19,6 +19,7 @@
 #include <flow/op/for_each.hpp>
 #include <flow/op/group_by.hpp>
 #include <flow/op/inspect.hpp>
+#include <flow/op/interleave.hpp>
 #include <flow/op/to_range.hpp>
 
 #include <flow/source/any.hpp>

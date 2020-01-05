@@ -428,22 +428,15 @@ public:
     template <typename = Derived>
     constexpr auto cycle() &&
     {
-        auto fn = [cur = derived(), initial = consume(), done = false] () mutable
+        auto fn = [cur = derived(), initial = consume()] () mutable
             -> maybe<item_t<Derived>>
         {
-            if (!done) {
-                auto m = cur.next();
-                if (m) {
+            while (true) {
+                if (auto m = cur.next()) {
                     return m;
-                } else {
-                    cur = initial;
-                    auto m2 = cur.next();
-                    if (!m2) {
-                        done = true;
-                    }
                 }
+                cur = initial;
             }
-            return {};
         };
         return consume().adapt(std::move(fn));
     }
@@ -467,6 +460,9 @@ public:
         };
         return consume().adapt(std::move(fn));
     }
+
+    template <typename Flow>
+    constexpr auto interleave(Flow with) &&;
 
     template <typename = Derived>
     constexpr auto flatten() &&;
