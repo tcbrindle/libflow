@@ -1,3 +1,6 @@
 
 add_executable(example_random_ints random_ints.cpp)
 target_link_libraries(example_random_ints flow)
+
+add_executable(example_pythagorean_triples pythagorean_triples.cpp)
+target_link_libraries(example_pythagorean_triples flow)

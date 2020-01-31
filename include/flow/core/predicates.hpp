@@ -114,7 +114,7 @@ inline constexpr auto nonzero = detail::predicate{[](auto const& val) -> bool {
 inline constexpr auto in = [](auto const&... vals) {
     static_assert(sizeof...(vals) > 0);
     return detail::predicate{[vals...](auto const& arg) -> decltype(auto) {
-        return ((arg == vals) || ...);
+        return (std::equal_to<>{}(arg, vals) || ...);
     }};
 };
 

@@ -11,11 +11,11 @@ namespace detail {
 template <typename Base>
 struct flatten_adaptor : flow_base<flatten_adaptor<Base>> {
 
-    constexpr flatten_adaptor(Base&& base)
+    constexpr explicit flatten_adaptor(Base&& base)
         : base_(std::move(base))
     {}
 
-    constexpr auto next() -> maybe<item_t<item_t<Base>>>
+    constexpr auto next() -> next_t<item_t<Base>>
     {
         while (true) {
             if (!inner_) {
@@ -35,16 +35,16 @@ struct flatten_adaptor : flow_base<flatten_adaptor<Base>> {
 
 private:
     Base base_;
-    maybe<item_t<Base>> inner_{};
+    next_t<Base> inner_{};
 };
-
 
 }
 
 template <typename Derived>
-template <typename>
 constexpr auto flow_base<Derived>::flatten() &&
 {
+    static_assert(is_flow<value_t<Derived>>,
+        "flatten() requires a flow whose item type is another flow");
     return detail::flatten_adaptor<Derived>(consume());
 }
 

@@ -244,16 +244,32 @@ public:
     template <typename NextFn>
     constexpr auto adapt(NextFn next_fn) &&;
 
+private:
     template <typename Func>
-    constexpr auto map(Func func) &&
+    struct map_adaptor : flow_base<map_adaptor<Func>> {
+        constexpr map_adaptor(Derived&& self, Func&& func)
+            : self_(std::move(self)),
+              func_(std::move(func))
+        {}
+
+        constexpr auto next() -> maybe<std::invoke_result_t<Func&, item_t<Derived>>>
+        {
+            return self_.next().map(func_);
+        }
+
+        Derived self_;
+        FLOW_NO_UNIQUE_ADDRESS Func func_;
+    };
+
+public:
+    template <typename Func>
+    constexpr auto map(Func func) && -> map_adaptor<Func>
     {
         static_assert(std::is_invocable_v<Func&, item_t<Derived>&&>,
             "Incompatible callable passed to map()");
         static_assert(!std::is_void_v<std::invoke_result_t<Func&, item_t<Derived>&&>>,
-            "May cannot be used with a function returning void");
-        return consume().adapt([self = consume(), func = std::move(func)] () mutable {
-            return self.next().map(func);
-        });
+            "Map cannot be used with a function returning void");
+        return map_adaptor<Func>(consume(), std::move(func));
     }
 
     template <typename = Derived>
@@ -275,7 +291,15 @@ public:
         });
     }
 
-    template <typename = Derived>
+    constexpr auto as_const() && -> decltype(auto)
+    {
+        if constexpr (std::is_lvalue_reference_v<item_t<Derived>>) {
+            return consume().template as<value_t<Derived> const&>();
+        } else {
+            return consume();
+        }
+    }
+
     constexpr auto copy() && -> decltype(auto)
     {
         if constexpr (std::is_lvalue_reference_v<item_t<Derived>>) {
@@ -285,7 +309,6 @@ public:
         }
     }
 
-    template <typename = Derived>
     constexpr auto move() && -> decltype(auto)
     {
         if constexpr (std::is_lvalue_reference_v<item_t<Derived>>) {
@@ -441,30 +464,46 @@ public:
         return consume().adapt(std::move(fn));
     }
 
+private:
+    template <typename Other>
+    struct chain_adaptor : flow_base<chain_adaptor<Other>> {
+
+        constexpr chain_adaptor(Derived&& self, Other&& other)
+            : self_(std::move(self)),
+              other_(std::move(other))
+        {}
+
+        constexpr auto next() -> next_t<Derived>
+        {
+            if (first_) {
+                if (auto m = self_.next()) {
+                    return m;
+                }
+                first_ = false;
+            }
+
+            return other_.next();
+        }
+
+    private:
+        Derived self_;
+        Other other_;
+        bool first_ = true;
+   };
+
+public:
     template <typename Flow>
     constexpr auto chain(Flow other) &&
     {
         static_assert(std::is_same_v<item_t<Derived>, item_t<Flow>>,
             "Flows used with chain() must have the exact same item type");
 
-        auto fn = [self = consume(),
-                   other = std::move(other),
-                   first = true] () mutable -> maybe<item_t<Derived>> {
-          if (first) {
-              if (auto m = self.next()) {
-                  return m;
-              }
-              first = false;
-          }
-          return other.next();
-        };
-        return consume().adapt(std::move(fn));
+        return chain_adaptor<Flow>(consume(), std::move(other));
     }
 
     template <typename Flow>
     constexpr auto interleave(Flow with) &&;
 
-    template <typename = Derived>
     constexpr auto flatten() &&;
 
     template <typename Func>
@@ -608,12 +647,6 @@ public:
             }
             os << FLOW_FWD(m);
         });
-    }
-
-    friend auto operator<<(std::ostream& os, flow_base&& self) -> std::ostream&
-    {
-        std::move(self).stream_to(os);
-        return os;
     }
 };
 
