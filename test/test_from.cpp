@@ -9,7 +9,7 @@
 #include "catch.hpp"
 
 namespace {
-
+#ifndef _MSC_VER
 constexpr bool test_std_array()
 {
     // lvalue
@@ -82,6 +82,7 @@ constexpr bool test_iter_sentinel_pair()
     return true;
 }
 static_assert(test_iter_sentinel_pair());
+#endif
 
 TEST_CASE("flow::from() lvalue random-access range", "[flow.from]")
 {

@@ -100,7 +100,13 @@ public:
     using std::optional<T>::operator->;
     using std::optional<T>::value;
     using std::optional<T>::reset;
+#ifndef _MSC_VER
     using std::optional<T>::operator bool;
+#else
+    constexpr explicit operator bool() const {
+        return this->has_value();
+    }
+#endif
 
     template <typename Func>
     constexpr auto map(Func&& func) & { return maybe::map_impl(*this, FLOW_FWD(func)); }

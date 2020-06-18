@@ -6,7 +6,7 @@
 
 namespace flow {
 
-inline constexpr struct {
+inline constexpr struct generate_fn {
 private:
     template <typename Func>
     struct generator : flow_base<generator<Func>> {

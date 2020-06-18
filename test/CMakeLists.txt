@@ -20,3 +20,7 @@ add_executable(test-libflow
     test_quick.cpp
 )
 target_link_libraries(test-libflow flow)
+
+if (MSVC)
+    target_compile_options(test-libflow PUBLIC /await)
+endif()

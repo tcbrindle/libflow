@@ -22,7 +22,7 @@ using value_t = remove_cvref_t<item_t<F>>;
 using dist_t = std::make_signed_t<std::size_t>;
 
 template <typename T>
-struct maybe;
+class maybe;
 
 template <typename Derived>
 struct flow_base;

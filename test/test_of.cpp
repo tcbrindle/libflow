@@ -6,11 +6,11 @@
 #include <iostream>
 
 namespace {
-
+#ifndef _MSC_VER
 constexpr bool test_rvalue_ints()
 {
     int counter = 0;
-    FLOW_FOR(int i, flow::of(0, 1, 2, 3)) {
+    FLOW_FOR(int i, flow::of{ 0, 1, 2, 3 }) {
         if (i != counter++) {
             return false;
         }
@@ -34,7 +34,7 @@ constexpr bool test_lvalue_ints()
     return true;
 }
 static_assert(test_lvalue_ints());
-
+#endif
 }
 
 TEST_CASE("flow::of rvalue strings", "[flow.of]")

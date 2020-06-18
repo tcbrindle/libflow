@@ -6,6 +6,7 @@
 #include <flow/core/type_traits.hpp>
 
 #include <iosfwd>
+#include <string>
 #include <vector>
 
 namespace flow {

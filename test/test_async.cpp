@@ -59,7 +59,7 @@ TEST_CASE("all the ints", "[flow.async]")
     auto vec = ints().take(5).to_vector();
 
     REQUIRE(vec.size() == 5);
-    for (int i = 0; i < vec.size(); i++) {
+    for (int i = 0; i < (int) vec.size(); i++) {
         REQUIRE(vec[i] == i);
     }
 }

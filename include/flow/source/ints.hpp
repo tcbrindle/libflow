@@ -7,7 +7,7 @@
 
 namespace flow {
 
-constexpr inline struct {
+constexpr inline struct iota_fn {
 
     template <typename I>
     constexpr auto operator()(I from = I{}) const
@@ -29,7 +29,7 @@ constexpr inline struct {
 
 } iota;
 
-constexpr inline struct {
+constexpr inline struct ints_fn {
     constexpr auto operator()(dist_t from = 0) const
     {
         return iota(from);

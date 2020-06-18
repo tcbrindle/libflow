@@ -15,8 +15,9 @@ struct wrapper {
 };
 
 struct move_only {
-    int i;
+    int i{};
 
+    constexpr move_only() = default;
     constexpr move_only(move_only&&) = default;
     constexpr move_only& operator=(move_only&&) = default;
 
@@ -95,7 +96,7 @@ constexpr bool test_while_loop_iteration()
 
 static_assert(test_while_loop_iteration<int>());
 static_assert(test_while_loop_iteration<move_only>());
-
+#ifndef _MSC_VER
 template <typename T>
 constexpr bool test_for_loop_iteration()
 {
@@ -112,6 +113,7 @@ constexpr bool test_for_loop_iteration()
 }
 static_assert(test_for_loop_iteration<int>());
 static_assert(test_for_loop_iteration<move_only>());
+#endif
 
 template <typename T>
 constexpr bool test_for_macro_iteration()

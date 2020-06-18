@@ -6,7 +6,7 @@
 #include <iostream>
 
 namespace {
-
+#ifndef _MSC_VER
 constexpr bool test_flatten()
 {
     auto f = [] {
@@ -29,7 +29,7 @@ constexpr bool test_flatten()
     return true;
 }
 static_assert(test_flatten());
-
+#endif
 }
 
 TEST_CASE("flatten() rvalue range", "[flow.flatten]")

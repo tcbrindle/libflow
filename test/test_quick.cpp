@@ -3,6 +3,7 @@
 
 #include "catch.hpp"
 
+#ifndef _MSC_VER
 // FIXME: GCC barfs if static_asserts using flow::of() are at namespace scope,
 // FIXME: and I don't know why :-(
 constexpr bool test_quick()
@@ -36,4 +37,6 @@ constexpr bool test_quick()
     return true;
 }
 static_assert(test_quick());
+
+#endif
 

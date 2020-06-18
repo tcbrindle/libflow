@@ -80,6 +80,7 @@ struct not_copy_assignable {
     not_copy_assignable() = default;
     not_copy_assignable(const not_copy_assignable&) = default;
     not_copy_assignable& operator=(const not_copy_assignable&) = delete;
+    not_copy_assignable& operator=(not_copy_assignable&&) = default;
 };
 
 
