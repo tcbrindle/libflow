@@ -13,6 +13,7 @@ add_executable(test-libflow
     test_empty.cpp
     test_from.cpp
     test_from_istream.cpp
+    test_from_istreambuf.cpp
     test_of.cpp
 
     # Operations
