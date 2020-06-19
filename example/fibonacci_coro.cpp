@@ -16,7 +16,7 @@ flow::async<int> fibonacci(int a = 1, int b = 1)
 int main()
 {
     std::cout << "The first ten Fibonacci numbers are:\n";
-    fibonacci().take(10).write_to(std::cout, ", ");
+    fibonacci().take(10).write_to(std::cout);
 }
 
 #else // !FLOW_HAVE_COROUTINES

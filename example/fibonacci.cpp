@@ -23,5 +23,5 @@ private:
 int main()
 {
     std::cout << "The first ten Fibonacci numbers are:\n";
-    fibonacci{}.take(10).write_to(std::cout, ", ");
+    fibonacci{}.take(10).write_to(std::cout);
 }
