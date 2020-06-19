@@ -15,11 +15,11 @@ struct flatten_adaptor : flow_base<flatten_adaptor<Base>> {
         : base_(std::move(base))
     {}
 
-    constexpr auto next() -> next_t<item_t<Base>>
+    constexpr auto next() -> next_t<flow_t<item_t<Base>>>
     {
         while (true) {
             if (!inner_) {
-                inner_ = base_.next();
+                inner_ = base_.next().map(flow::from);
                 if (!inner_) {
                     return {};
                 }
@@ -28,14 +28,14 @@ struct flatten_adaptor : flow_base<flatten_adaptor<Base>> {
             if (auto m = inner_->next()) {
                 return m;
             } else {
-                inner_ = maybe<item_t<Base>>{};
+                inner_ = {};
             }
         }
     }
 
 private:
     Base base_;
-    next_t<Base> inner_{};
+    maybe<flow_t<item_t<Base>>> inner_{};
 };
 
 }
@@ -43,8 +43,8 @@ private:
 template <typename Derived>
 constexpr auto flow_base<Derived>::flatten() &&
 {
-    static_assert(is_flow<value_t<Derived>>,
-        "flatten() requires a flow whose item type is another flow");
+    static_assert(is_flowable<value_t<Derived>>,
+        "flatten() requires a flow whose item type is flowable");
     return detail::flatten_adaptor<Derived>(consume());
 }
 

@@ -63,17 +63,13 @@ TEST_CASE("flatten(), then count", "[flow.flatten]")
 
 TEST_CASE("flatten(), then min", "[flow.flatten]")
 {
-    auto vec_of_vecs = std::vector{
+    const auto vec_of_vecs = std::vector{
         std::vector{1, 2, 3},
         std::vector{4, 5, 6},
         std::vector{7, 8, 9}
     };
 
-    auto f = [&vec_of_vecs] {
-        return flow::from(vec_of_vecs)
-            .map([](auto& vec) { return flow::from(vec); })
-            .flatten();
-    };
+    auto f = [&vec_of_vecs] { return flow::from(vec_of_vecs).flatten(); };
 
     REQUIRE(f().count() == 9);
     REQUIRE(f().is_sorted());
