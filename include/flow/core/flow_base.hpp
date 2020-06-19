@@ -7,6 +7,8 @@
 #include <flow/core/predicates.hpp>
 #include <flow/core/type_traits.hpp>
 
+#include <flow/source/from.hpp>
+
 #include <cassert>
 #include <iosfwd>  // for stream_to()
 #include <string>  // for to_string()
@@ -28,7 +30,7 @@ protected:
 
 public:
     template <typename D = Derived>
-    constexpr auto advance(dist_t dist) -> maybe<item_t<D>>
+    constexpr auto advance(dist_t dist) -> next_t<D>
     {
         assert(dist > 0);
         for (dist_t i = 0; i < dist - 1; i++) {
@@ -86,7 +88,7 @@ public:
     /// after it has returned and the remaining items (if any) may be processed.
     ///
     /// This is a low-level operation, effectively a stateless version of
-    /// `try_for_each()`. For most user code, higher-level functions such as
+    /// `try_fold()`. For most user code, higher-level functions such as
     /// `for_each()` will be more convenient.
     template <typename Func>
     constexpr auto try_for_each(Func func)
@@ -512,12 +514,15 @@ public:
     template <typename Func>
     constexpr auto flat_map(Func func) &&;
 
-    template <typename Flow>
-    constexpr auto zip_with(Flow other) &&
+    template <typename Flowable>
+    constexpr auto zip_with(Flowable other) &&
     {
-        using item_type = std::pair<item_t<Derived>, item_t<Flow>>;
+        static_assert(is_flowable<Flowable>,
+                      "Argument to zip_with() must be a Flowable type");
 
-        auto fn = [self = consume(), other = std::move(other)] () mutable
+        using item_type = std::pair<item_t<Derived>, item_t<flow_t<Flowable>>>;
+
+        auto fn = [self = consume(), other = flow::from(std::move(other))] () mutable
             -> maybe<item_type>
         {
             auto m1 = self.next();
@@ -571,9 +576,14 @@ public:
         return consume().template elements<1>();
     }
 
-    template <typename Flow>
-    constexpr auto equal(Flow other) && -> bool
+    template <typename Flowable>
+    constexpr auto equal(Flowable&& flowable) && -> bool
     {
+        static_assert(is_flowable<Flowable>,
+                      "Argument to equal() must be a Flowable type");
+
+        auto&& other = flow::from(FLOW_FWD(flowable));
+
         while (true) {
             auto m1 = derived().next();
             auto m2 = other.next();

@@ -162,75 +162,90 @@ TEST_CASE("flow::from std::map", "[flow.from]")
 
 struct flowable_member {
 
-    auto to_flow() & { return flow::from(vec); }
-    auto to_flow() const& { return flow::from(vec); }
-    auto to_flow() && { return flow::from(std::move(vec)); }
+    constexpr auto to_flow() & { return flow::from(vec); }
+    constexpr auto to_flow() const& { return flow::from(vec); }
+    constexpr auto to_flow() && { return flow::from(std::move(vec)); }
 
-    std::vector<int> vec{1, 2, 3, 4};
+    std::array<int, 4> vec{1, 2, 3, 4};
 };
 
 struct flowable_adl {
 
     template <typename Self>
-    friend auto to_flow(Self&& self) { return flow::from(FLOW_FWD(self).vec); }
+    friend constexpr auto to_flow(Self&& self) { return flow::from(FLOW_FWD(self).vec); }
 
-    std::vector<int> vec{1, 2, 3, 4};
+    std::array<int, 4> vec{1, 2, 3, 4};
 };
 
+constexpr bool test_to_flow()
+{
+    const std::array<int, 4> test{1, 2, 3, 4};
+    const auto times2 = [](int i) { return i * 2; };
+
+    bool success = true;
+
+    // Test member to_flow()
+    {
+        // Mutable lvalue
+        {
+            flowable_member fl{};
+
+            success = success && flow::from(fl).equal(test);
+
+            FLOW_FOR(int& i, flow::from(fl)) {
+                i *= 2;
+            }
+
+            success = success && flow::from(test).map(times2).equal(fl);
+        }
+
+        // Const lvalue
+        {
+            const flowable_member fl{};
+            success = success && flow::from(fl).equal(test);
+        }
+
+        // Rvalue
+        {
+            success = success && flow::from(flowable_member{}).equal(test);
+        }
+    }
+
+    // Test ADL-only to_flow()
+    {
+        // Mutable lvalue
+        {
+            flowable_adl fl{};
+
+            success = success && flow::from(fl).equal(test);
+
+            FLOW_FOR(int& i, flow::from(fl)) {
+                        i *= 2;
+                    }
+
+            success = success && flow::from(test).map(times2).equal(fl);
+        }
+
+        // Const lvalue
+        {
+            const flowable_adl fl{};
+            success = success && flow::from(fl).equal(test);
+        }
+
+        // Rvalue
+        {
+            success = success && flow::from(flowable_adl{}).equal(test);
+        }
+    }
+
+
+    return success;
+}
+static_assert(test_to_flow());
 
 TEST_CASE("flow::from with custom flowable type", "[flow.from]")
 {
-    const std::vector test{1, 2, 3, 4};
-    const auto times2 = [](int i) { return i *= 2; };
-
-    SECTION("member to_flow()") {
-
-        SECTION("mutable lvalue") {
-            flowable_member fl{};
-
-            REQUIRE(flow::from(fl).to_vector() == test);
-
-            FLOW_FOR(int& i, flow::from(fl)) {
-                i *= 2;
-            }
-
-            REQUIRE(flow::from(fl).equal(flow::from(test).map(times2)));
-        }
-
-        SECTION("const lvalue") {
-            const flowable_member fl{};
-
-            REQUIRE(flow::from(fl).to_vector() == test);
-        }
-
-        SECTION("rvalue") {
-            REQUIRE(flow::from(flowable_member{}).to_vector() == test);
-        }
-    }
-
-    SECTION("ADL-only to_flow()") {
-        SECTION("mutable lvalue") {
-            flowable_adl fl{};
-
-            REQUIRE(flow::from(fl).to_vector() == test);
-
-            FLOW_FOR(int& i, flow::from(fl)) {
-                i *= 2;
-            }
-
-            REQUIRE(flow::from(fl).equal(flow::from(test).map(times2)));
-        }
-
-        SECTION("const lvalue") {
-            const flowable_adl fl{};
-
-            REQUIRE(flow::from(fl).to_vector() == test);
-        }
-
-        SECTION("rvalue") {
-            REQUIRE(flow::from(flowable_adl{}).to_vector() == test);
-        }
-    }
+    REQUIRE(test_to_flow());
 }
 
 }
