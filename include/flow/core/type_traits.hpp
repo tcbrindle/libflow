@@ -46,7 +46,7 @@ inline constexpr bool has_next<T, std::enable_if_t<is_maybe<next_t<T>>>> = true;
 template <typename I>
 inline constexpr bool is_flow
     = std::is_base_of_v<flow_base<I>, I> &&
-      std::is_convertible_v<I&, flow_base<I>&> &&
+      std::is_convertible_v<std::add_lvalue_reference_t<I>, flow_base<I>&> &&
       detail::has_next<I>;
 
 } // namespace flow

@@ -2,7 +2,7 @@
 #ifndef FLOW_SOURCE_FROM_HPP_INCLUDED
 #define FLOW_SOURCE_FROM_HPP_INCLUDED
 
-#include <array>
+#include <cassert>
 #include <iterator>
 
 namespace flow {
@@ -19,7 +19,7 @@ template <typename R>
 using iter_reference_t = decltype(*std::declval<iterator_t<R>&>());
 
 template <typename R>
-using iter_value_t = remove_cvref_t<iter_reference_t<R>>;
+using iter_value_t = typename std::iterator_traits<iterator_t<R>>::value_type;
 
 template <typename R>
 using iter_category_t =
@@ -145,40 +145,65 @@ private:
     dist_t idx_ = 0;
 };
 
-struct from_fn {
-    template <typename R>
-    constexpr auto operator()(R&& range) const
-    {
+template <typename R, typename = std::enable_if_t<detail::is_stl_range<R>>>
+constexpr auto to_flow(R&& range)
+{
+    using rng_t =
+        std::conditional_t<std::is_lvalue_reference_v<R>,
+                           detail::range_ref<std::remove_reference_t<R>>, R>;
+
+    if constexpr (detail::is_random_access_stl_range<R>) {
+        return detail::stl_ra_range_adaptor<rng_t>{FLOW_FWD(range)};
+    } else if constexpr (detail::is_fwd_stl_range<R>) {
+        return detail::stl_fwd_range_adaptor<rng_t>{FLOW_FWD(range)};
+    } else {
         static_assert(
-            is_stl_range<R>,
-            "Argument to flow::from() does not look like an STL range");
-
-        using rng_t =
-            std::conditional_t<std::is_lvalue_reference_v<R>,
-                               range_ref<std::remove_reference_t<R>>, R>;
-
-        if constexpr (is_random_access_stl_range<R>) {
-            return stl_ra_range_adaptor<rng_t>{FLOW_FWD(range)};
-        } else if constexpr (is_fwd_stl_range<R>) {
-            return stl_fwd_range_adaptor<rng_t>{FLOW_FWD(range)};
-        } else {
-            static_assert(
-                !std::is_lvalue_reference_v<R>,
-                "Input ranges must be passed as rvalues -- use std::move()");
-            return stl_input_range_adaptor<R>{FLOW_FWD(range)};
-        }
+            !std::is_lvalue_reference_v<R>,
+            "Input ranges must be passed as rvalues -- use std::move()");
+        return detail::stl_input_range_adaptor<R>{FLOW_FWD(range)};
     }
+}
 
-    template <typename I, typename S>
-    constexpr auto operator()(I iterator, S sentinel) const
+template <typename, typename = void>
+inline constexpr bool has_member_to_flow = false;
+
+template <typename T>
+inline constexpr bool has_member_to_flow<
+    T, std::enable_if_t<is_flow<decltype(std::declval<T>().to_flow())>>> = true;
+
+template <typename, typename = void>
+inline constexpr bool has_adl_to_flow = false;
+
+template <typename T>
+inline constexpr bool has_adl_to_flow<
+    T, std::enable_if_t<is_flow<decltype(to_flow(std::declval<T>()))>>> = true;
+
+} // namespace detail
+
+template <typename T>
+inline constexpr bool is_flowable =
+    detail::has_member_to_flow<T> || detail::has_adl_to_flow<T>;
+
+namespace detail {
+
+struct from_fn {
+    template <typename T, typename = std::enable_if_t<is_flowable<T>>>
+    constexpr auto operator()(T&& t) const
     {
-        return from_fn{}(iterator_range<I, S>{std::move(iterator), std::move(sentinel)});
+        if constexpr (detail::has_member_to_flow<T>) {
+            return FLOW_FWD(t).to_flow();
+        } else if constexpr (detail::has_adl_to_flow<T>) {
+            return to_flow(FLOW_FWD(t));
+        }
     }
 };
 
 } // namespace detail
 
 inline constexpr detail::from_fn from{};
+
+template <typename T>
+using flow_t = decltype(from(std::declval<T>()));
 
 } // namespace flow
 

@@ -68,20 +68,6 @@ constexpr bool test_raw_array()
     return true;
 }
 static_assert(test_raw_array());
-
-constexpr bool test_iter_sentinel_pair()
-{
-    std::array arr{1, 2, 3, 4, 5};
-
-    int counter = 0;
-    FLOW_FOR(int i, flow::from(arr.begin(), arr.end())) {
-                if (i != arr[counter++]) {
-                    return false;
-                }
-            }
-    return true;
-}
-static_assert(test_iter_sentinel_pair());
 #endif
 
 TEST_CASE("flow::from() lvalue random-access range", "[flow.from]")
@@ -170,6 +156,80 @@ TEST_CASE("flow::from std::map", "[flow.from]")
         REQUIRE(str == std::to_string(counter));
         REQUIRE(i == counter);
         ++counter;
+    }
+}
+
+
+struct flowable_member {
+
+    auto to_flow() & { return flow::from(vec); }
+    auto to_flow() const& { return flow::from(vec); }
+    auto to_flow() && { return flow::from(std::move(vec)); }
+
+    std::vector<int> vec{1, 2, 3, 4};
+};
+
+struct flowable_adl {
+
+    template <typename Self>
+    friend auto to_flow(Self&& self) { return flow::from(FLOW_FWD(self).vec); }
+
+    std::vector<int> vec{1, 2, 3, 4};
+};
+
+
+TEST_CASE("flow::from with custom flowable type", "[flow.from]")
+{
+    const std::vector test{1, 2, 3, 4};
+    const auto times2 = [](int i) { return i *= 2; };
+
+    SECTION("member to_flow()") {
+
+        SECTION("mutable lvalue") {
+            flowable_member fl{};
+
+            REQUIRE(flow::from(fl).to_vector() == test);
+
+            FLOW_FOR(int& i, flow::from(fl)) {
+                i *= 2;
+            }
+
+            REQUIRE(flow::from(fl).equal(flow::from(test).map(times2)));
+        }
+
+        SECTION("const lvalue") {
+            const flowable_member fl{};
+
+            REQUIRE(flow::from(fl).to_vector() == test);
+        }
+
+        SECTION("rvalue") {
+            REQUIRE(flow::from(flowable_member{}).to_vector() == test);
+        }
+    }
+
+    SECTION("ADL-only to_flow()") {
+        SECTION("mutable lvalue") {
+            flowable_adl fl{};
+
+            REQUIRE(flow::from(fl).to_vector() == test);
+
+            FLOW_FOR(int& i, flow::from(fl)) {
+                i *= 2;
+            }
+
+            REQUIRE(flow::from(fl).equal(flow::from(test).map(times2)));
+        }
+
+        SECTION("const lvalue") {
+            const flowable_adl fl{};
+
+            REQUIRE(flow::from(fl).to_vector() == test);
+        }
+
+        SECTION("rvalue") {
+            REQUIRE(flow::from(flowable_adl{}).to_vector() == test);
+        }
     }
 }
 

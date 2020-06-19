@@ -20,6 +20,9 @@ private:
     constexpr auto derived() & -> Derived& { return static_cast<Derived&>(*this); }
     constexpr auto consume() -> Derived&& { return static_cast<Derived&&>(*this); }
 
+    friend constexpr auto to_flow(flow_base const& self) { return static_cast<Derived const&>(self); }
+    friend constexpr auto to_flow(flow_base&& self) { return self.consume(); }
+
 protected:
     ~flow_base() = default;
 
