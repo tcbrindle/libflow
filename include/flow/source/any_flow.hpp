@@ -9,7 +9,7 @@
 namespace flow {
 
 template <typename T>
-struct any : flow_base<any<T>> {
+struct any_flow : flow_base<any_flow<T>> {
 private:
     struct iface {
         virtual auto do_next() -> maybe<T> = 0;
@@ -30,9 +30,9 @@ private:
 
 public:
     template <typename F,
-        std::enable_if_t<!std::is_same_v<remove_cvref_t<F>, any>, int> = 0,
+        std::enable_if_t<!std::is_same_v<remove_cvref_t<F>, any_flow>, int> = 0,
         std::enable_if_t<is_flow<F> && std::is_same_v<item_t<F>, T>, int> = 0>
-    any(F flow)
+    any_flow(F flow)
         : ptr_(std::make_unique<impl<F>>(std::move(flow)))
     {}
 
@@ -41,7 +41,7 @@ public:
 
 
 template <typename T>
-struct any_ref : flow_base<any_ref<T>> {
+struct any_flow_ref : flow_base<any_flow_ref<T>> {
 private:
     using next_fn_t = auto (void*) -> maybe<T>;
 
@@ -55,9 +55,9 @@ private:
 
 public:
     template <typename F,
-        std::enable_if_t<!std::is_same_v<std::remove_reference_t<F>, any_ref>, int> = 0,
+        std::enable_if_t<!std::is_same_v<std::remove_reference_t<F>, any_flow_ref>, int> = 0,
         std::enable_if_t<is_flow<F> && std::is_same_v<item_t<F>, T>, int> = 0>
-    constexpr any_ref(F& flow)
+    constexpr any_flow_ref(F& flow)
         : ptr_(std::addressof(flow)),
           next_fn_(next_fn_impl<F>)
     {}

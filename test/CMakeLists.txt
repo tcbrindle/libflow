@@ -7,7 +7,7 @@ add_executable(test-libflow
     test_basic.cpp
 
     # Sources
-    test_any.cpp
+    test_any_flow.cpp
     test_async.cpp
     test_c_str.cpp
     test_empty.cpp
