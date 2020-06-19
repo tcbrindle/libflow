@@ -118,6 +118,14 @@ inline constexpr auto in = [](auto const&... vals) {
     }};
 };
 
+inline constexpr auto even = detail::predicate{[](auto const& val) -> bool {
+    return val % decltype(val){2} == decltype(val){0};
+}};
+
+inline constexpr auto odd = detail::predicate{[](auto const& val) -> bool {
+  return val % decltype(val){2} != decltype(val){0};
+}};
+
 } // namespaces
 
 #endif

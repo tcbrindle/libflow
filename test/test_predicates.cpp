@@ -21,12 +21,10 @@ auto all_of = [](const auto& rng, auto pred) {
 
 auto none_of = [](const auto& rng, auto pred) { return all_of(rng, !pred); };
 
-auto any_of = [](const auto& rng, auto pred) { return !none_of(rng, pred); };
-
-
 constexpr bool test_comparators()
 {
     constexpr std::array ones{1, 1, 1, 1, 1, 1};
+    constexpr std::array twos{2, 2, 2, 2, 2, 2};
     constexpr std::array negatives{-1.0, -2.0, -3.0, -4.0, -5.0};
 
     static_assert(all_of(ones, pred::eq(1)));
@@ -48,6 +46,11 @@ constexpr bool test_comparators()
     static_assert(none_of(negatives, pred::positive));
     static_assert(all_of(negatives, pred::negative));
     static_assert(all_of(negatives, pred::nonzero));
+
+    static_assert(all_of(twos, pred::even));
+    static_assert(none_of(ones, pred::even));
+    static_assert(all_of(ones, pred::odd));
+    static_assert(none_of(twos, pred::odd));
 
     return true;
 }
