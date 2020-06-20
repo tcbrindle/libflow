@@ -42,7 +42,6 @@ inline constexpr bool is_random_access_stl_range =
 
 template <typename R>
 struct range_ref {
-
     constexpr range_ref(R& rng) : ptr_(std::addressof(rng)) {}
 
     constexpr auto begin() const { return std::begin(*ptr_); }
@@ -50,16 +49,6 @@ struct range_ref {
 
 private:
     R* ptr_;
-};
-
-template <typename I, typename S>
-struct iterator_range {
-
-    constexpr auto begin() const { return first; }
-    constexpr auto end() const { return last; }
-
-    I first;
-    S last;
 };
 
 template <typename R>
@@ -87,6 +76,21 @@ public:
         }
         return {};
     }
+
+    constexpr auto to_range() &&
+    {
+        return std::move(rng_);
+    }
+
+    template <typename C>
+    constexpr auto to() &&
+    {
+        if constexpr (std::is_same_v<C, R>) {
+            return std::move(rng_);
+        } else {
+            return C(cur_, std::end(rng_));
+        }
+    }
 };
 
 template <typename R>
@@ -101,6 +105,21 @@ public:
             return {*cur_++};
         }
         return {};
+    }
+
+    constexpr auto to_range() &&
+    {
+        return std::move(rng_);
+    }
+
+    template <typename C>
+    constexpr auto to() &&
+    {
+        if constexpr (std::is_same_v<C, R>) {
+            return std::move(rng_);
+        } else {
+            return C(cur_, std::end(rng_));
+        }
     }
 
 private:
@@ -138,6 +157,21 @@ struct stl_ra_range_adaptor : flow_base<stl_ra_range_adaptor<R>> {
         assert(dist > 0);
         idx_ += dist - 1;
         return next();
+    }
+
+    constexpr auto to_range() &&
+    {
+        return std::move(rng_);
+    }
+
+    template <typename C>
+    constexpr auto to() &&
+    {
+        if constexpr (std::is_same_v<C, R>) {
+            return std::move(rng_);
+        } else {
+            return C(std::begin(rng_) + idx_, std::end(rng_));
+        }
     }
 
 private:

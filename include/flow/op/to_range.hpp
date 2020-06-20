@@ -77,7 +77,6 @@ private:
 }
 
 template <typename D>
-template <typename>
 constexpr auto flow_base<D>::to_range() &&
 {
     return detail::flow_range<D>{consume()};

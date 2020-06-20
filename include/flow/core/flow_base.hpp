@@ -601,7 +601,6 @@ public:
         }
     }
 
-    template <typename = Derived>
     constexpr auto to_range() &&;
 
     template <typename C>
@@ -624,7 +623,7 @@ public:
 
     constexpr auto to_vector() &&
     {
-        return consume().template to<std::vector>();
+        return consume().template to<std::vector<value_t<Derived>>>();
     }
 
     template <typename T>

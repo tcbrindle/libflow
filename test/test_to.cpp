@@ -3,6 +3,7 @@
 
 #include "catch.hpp"
 
+#include <list>
 #include <map>
 #include <iostream>
 
@@ -39,4 +40,13 @@ TEST_CASE("to_string()", "[flow.to]")
 {
     auto str = flow::of('a', 'b', 'c').to_string();
     REQUIRE(str == "abc");
+}
+
+TEST_CASE("to_range() round-tripping", "[flow.to]")
+{
+    auto rng = flow::from(std::list{1, 2, 3}).to_range();
+
+    static_assert(std::is_same_v<decltype(rng), std::list<int>>);
+
+    REQUIRE((rng == std::list{1, 2, 3}));
 }
