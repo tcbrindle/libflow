@@ -35,7 +35,7 @@ std::array<uint8_t, 6> parse_mac_address(std::istringstream& str)
                 uint8_t c;
                 std::from_chars(s.data(), s.data() + s.length(), c, 16);
                 return c;
-            }).zip_with(flow::ints());
+            }).zip(flow::ints());
 
     std::array<uint8_t, 6> out{};
 

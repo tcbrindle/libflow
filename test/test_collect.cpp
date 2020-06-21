@@ -29,8 +29,7 @@ TEST_CASE("collect() to set", "[flow.collect]")
 TEST_CASE("collect() to map", "[flow.collect]")
 {
     std::map<std::string, int> map =
-        flow::of<std::string, 3>("A", "B", "C")
-            .zip_with(flow::ints(1))
+        flow::of<std::string, 3>("A", "B", "C").zip(flow::ints(1))
             .collect();
 
     REQUIRE((map == std::map<std::string, int>{{"A", 1}, {"B", 2}, {"C", 3}}));
@@ -39,8 +38,7 @@ TEST_CASE("collect() to map", "[flow.collect]")
 TEST_CASE("collect() to unordered_map", "[flow.collect]")
 {
     std::unordered_map<std::string, int> map =
-        flow::of<std::string, 3>("A", "B", "C")
-            .zip_with(flow::ints(1))
+        flow::of<std::string, 3>("A", "B", "C").zip(flow::ints(1))
             .collect();
 
     REQUIRE((map == std::unordered_map<std::string, int>{{"A", 1}, {"B", 2}, {"C", 3}}));

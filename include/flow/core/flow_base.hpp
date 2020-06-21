@@ -515,14 +515,14 @@ public:
     constexpr auto flat_map(Func func) &&;
 
     template <typename Flowable>
-    constexpr auto zip_with(Flowable other) &&
+    constexpr auto zip(Flowable&& other) &&
     {
         static_assert(is_flowable<Flowable>,
-                      "Argument to zip_with() must be a Flowable type");
+                      "Argument to zip() must be a Flowable type");
 
         using item_type = std::pair<item_t<Derived>, item_t<flow_t<Flowable>>>;
 
-        auto fn = [self = consume(), other = flow::from(std::move(other))] () mutable
+        auto fn = [self = consume(), other = flow::from(FLOW_FWD(other))] () mutable
             -> maybe<item_type>
         {
             auto m1 = self.next();

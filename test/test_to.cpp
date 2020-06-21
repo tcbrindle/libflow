@@ -30,7 +30,7 @@ TEST_CASE("to<std::map>()", "[flow.to]")
     using namespace std::string_literals;
 
     auto map = flow::of("a"s, "b"s, "c"s)
-        .zip_with(flow::ints())
+                   .zip(flow::ints())
         .to<std::map<std::string, int>>();
 
     REQUIRE((map == std::map<std::string, int>{{"a", 0}, {"b", 1}, {"c", 2}}));
