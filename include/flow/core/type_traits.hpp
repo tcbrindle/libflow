@@ -10,6 +10,10 @@ namespace flow {
 template <typename T>
 using remove_cvref_t = std::remove_const_t<std::remove_reference_t<T>>;
 
+template <typename T>
+using remove_rref_t = std::conditional_t<
+    std::is_rvalue_reference_v<T>, std::remove_reference_t<T>, T>;
+
 template <typename F>
 using next_t = decltype(std::declval<F&>().next());
 

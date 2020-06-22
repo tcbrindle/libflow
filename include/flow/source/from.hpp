@@ -239,6 +239,12 @@ inline constexpr detail::from_fn from{};
 template <typename T>
 using flow_t = decltype(from(std::declval<T>()));
 
+template <typename T>
+using flow_item_t = item_t<flow_t<T>>;
+
+template <typename T>
+using flow_value_t = value_t<flow_t<T>>;
+
 } // namespace flow
 
 #endif

@@ -42,9 +42,9 @@ public:
 
     /// Short-circuiting left fold operation.
     ///
-    /// Given a function @func and an initial value @init, repeatedly calls
-    /// `func(std::move(init), next())` and assigns the result to @init. If
-    /// @init then evaluates to `false`, it immediately exits, returning
+    /// Given a function `func` and an initial value `init`, repeatedly calls
+    /// `func(std::move(init), next())` and assigns the result to `init`. If
+    /// `init` then evaluates to `false`, it immediately exits, returning
     /// the accumulated value. For an empty flow, it simply returns the initial
     /// value.
     ///
@@ -107,11 +107,15 @@ public:
 
     /// Consumes the flow, performing a functional left fold operation.
     ///
-    /// Given a callable @func and an initial value @init, calls
+    /// Given a callable `func` and an initial value `init`, calls
     /// `init = func(std::move(init), i)` for each item `i` in the flow. Once
-    /// the flow is exhausted, it returns the value accumulated in @init.
+    /// the flow is exhausted, it returns the value accumulated in `init`.
     ///
     /// This is the same operation as `std::accumulate`.
+    ///
+    /// @func Callable with signature `(Init, item_t<Flow>) -> Init`
+    /// @init Initial value of the reduction
+    /// @return The accumulated value
     template <typename Func, typename Init>
     constexpr auto fold(Func func, Init init) && -> Init;
 
@@ -349,7 +353,7 @@ public:
             {
                 while (auto o = self.next()) {
                     if (invoke(pred, *o)) {
-                        return o;
+                        return {std::move(o)};
                     }
                 }
                 return {};
@@ -405,19 +409,30 @@ public:
         return consume().adapt(std::move(fn));
     }
 
+    struct take_adaptor : flow_base<take_adaptor>
+    {
+        constexpr take_adaptor(Derived&& derived, dist_t count)
+            : derived_(std::move(derived)), count_(count)
+        {}
+
+        constexpr auto next() -> maybe<item_t<Derived>>
+        {
+            if (count_ > 0) {
+                --count_;
+                return derived_.next();
+            }
+            return {};
+        }
+
+    private:
+        Derived derived_;
+        dist_t count_;
+    };
+
     template <typename = Derived>
     constexpr auto take(dist_t count) &&
     {
-        auto fn = [self = consume(), count = count] () mutable -> maybe<item_t<Derived>>
-        {
-            if (count > 0) {
-                --count;
-                return self.next();
-            }
-            return {};
-        };
-
-        return consume().adapt(std::move(fn));
+        return take_adaptor{consume(), count};
     }
 
     template <typename Pred>
@@ -453,20 +468,31 @@ public:
         return consume().adapt(std::move(fn));
     }
 
+    struct cycle_adaptor : flow_base<cycle_adaptor>
+    {
+        constexpr cycle_adaptor(Derived&& d)
+            : init_(std::move(d))
+        {}
+
+        constexpr auto next() -> next_t<Derived>
+        {
+            while (true) {
+                if (auto m = cur_.next()) {
+                    return m;
+                }
+                cur_ = init_;
+            }
+        }
+
+    private:
+        Derived init_;
+        Derived cur_ = init_;
+    };
+
     template <typename = Derived>
     constexpr auto cycle() &&
     {
-        auto fn = [cur = derived(), initial = consume()] () mutable
-            -> maybe<item_t<Derived>>
-        {
-            while (true) {
-                if (auto m = cur.next()) {
-                    return m;
-                }
-                cur = initial;
-            }
-        };
-        return consume().adapt(std::move(fn));
+        return cycle_adaptor{consume()};
     }
 
 private:
@@ -514,27 +540,24 @@ public:
     template <typename Func>
     constexpr auto flat_map(Func func) &&;
 
-    template <typename Flowable>
-    constexpr auto zip(Flowable&& other) &&
+    template <typename... Flowables>
+    constexpr auto zip(Flowables&&... flowables) &&
     {
-        static_assert(is_flowable<Flowable>,
-                      "Argument to zip() must be a Flowable type");
+        static_assert((is_flowable<Flowables> && ...),
+                      "Arguments to zip() must be Flowable types");
 
-        using item_type = std::pair<item_t<Derived>, item_t<flow_t<Flowable>>>;
+        using item_type = std::conditional_t<
+            sizeof...(Flowables) == 1,
+             std::pair<item_t<Derived>, item_t<flow_t<Flowables>>...>,
+             std::tuple<item_t<Derived>, item_t<flow_t<Flowables>>...>>;
 
-        auto fn = [self = consume(), other = flow::from(FLOW_FWD(other))] () mutable
-            -> maybe<item_type>
-        {
-            auto m1 = self.next();
-            if (!m1) { return {}; }
-
-            auto m2 = other.next();
-            if (!m2) { return {}; }
-
-            return item_type{*std::move(m1), *std::move(m2)};
-        };
-        return consume().adapt(std::move(fn));
+        return consume().zip_with([](auto&& v1, auto&& v2) {
+            return item_type{FLOW_FWD(v1), FLOW_FWD(v2)};
+        }, FLOW_FWD(flowables)...);
     }
+
+    template <typename Func, typename... Flowables>
+    constexpr auto zip_with(Func func, Flowables&&... flowables) &&;
 
     constexpr auto enumerate() &&;
 
@@ -559,7 +582,7 @@ public:
     constexpr auto elements() &&
     {
         return consume().map(
-            [] (auto&& val) -> decltype(std::get<N>(FLOW_FWD(val))) {
+            [] (auto&& val) -> remove_rref_t<decltype(std::get<N>(FLOW_FWD(val)))> {
             return std::get<N>(FLOW_FWD(val));
         });
     }

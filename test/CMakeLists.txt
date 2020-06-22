@@ -29,7 +29,7 @@ add_executable(test-libflow
     test_inspect.cpp
     test_interleave.cpp
     test_to.cpp
-
+    test_zip_with.cpp
 
     test_quick.cpp
 )
