@@ -29,6 +29,12 @@ protected:
     ~flow_base() = default;
 
 public:
+    template <typename Adaptor, typename... Args>
+    constexpr auto apply(Adaptor&& adaptor, Args&&... args) && -> decltype(auto)
+    {
+        return invoke(FLOW_FWD(adaptor), consume(), FLOW_FWD(args)...);
+    }
+
     template <typename D = Derived>
     constexpr auto advance(dist_t dist) -> next_t<D>
     {
@@ -48,7 +54,7 @@ public:
     /// the accumulated value. For an empty flow, it simply returns the initial
     /// value.
     ///
-    /// Note that the type of the second parameter to @func differs from plain
+    /// Note that the type of the second parameter to `func` differs from plain
     /// `fold()`: this version takes a `maybe`, which `fold()` unwraps for
     /// convenience.
     ///
@@ -59,28 +65,19 @@ public:
     /// reductions are (eventually) based. For most user code, one of the
     /// higher-level operations is usually more convenient.
     template <typename Func, typename Init>
-    constexpr auto try_fold(Func func, Init init) -> Init
-    {
-        while (auto m = derived().next()) {
-            init = invoke(func, std::move(init), std::move(m));
-            if (!init) {
-                break;
-            }
-        }
-        return init;
-    }
+    constexpr auto try_fold(Func func, Init init) -> Init;
 
     /// Short-circuiting version of for_each().
     ///
-    /// Given a unary function @func, repeatedly calls `func(next())`. If the
+    /// Given a unary function `func`, repeatedly calls `func(next())`. If the
     /// return value of the function evaluates to `false`, it immediately exits,
     /// providing the last function return value.
     ///
-    /// `try_for_each()` requires that the return type of @func is "bool-ish":
+    /// `try_for_each()` requires that the return type of `func` is "bool-ish":
     /// that it is default-constructible, move-assignable, and contextually
     /// convertible to `bool`.
     ///
-    /// Note that the type of the parameter to @func differs from plain
+    /// Note that the type of the parameter to `func` differs from plain
     /// `for_each()`: this version takes a `maybe`, which `for_each()` unwraps for
     /// convenience.
     ///
@@ -94,15 +91,9 @@ public:
     constexpr auto try_for_each(Func func)
     {
         using result_t = std::invoke_result_t<Func&, next_t<Derived>&&>;
-        return derived().try_fold([&func](auto const& /*unused*/, auto m) -> decltype(auto) {
-            return invoke(func, std::move(m));
+        return derived().try_fold([&func](auto&& /*unused*/, auto&& m) -> decltype(auto) {
+            return invoke(func, FLOW_FWD(m));
         }, result_t{});
-    }
-
-    template <typename Adaptor, typename... Args>
-    constexpr auto apply(Adaptor&& adaptor, Args&&... args) && -> decltype(auto)
-    {
-        return invoke(FLOW_FWD(adaptor), consume(), FLOW_FWD(args)...);
     }
 
     /// Consumes the flow, performing a functional left fold operation.
