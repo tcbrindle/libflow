@@ -14,4 +14,19 @@ constexpr bool test_for_each()
 }
 static_assert(test_for_each());
 
+constexpr bool test_for_each2()
+{
+    std::array in{1, 2, 3, 4, 5};
+
+    struct fn {
+        constexpr void operator()(int i) { total += i; }
+        int total = 0;
+    };
+
+    auto f = flow::for_each(in, fn{});
+
+    return f.total == 15;
+}
+static_assert(test_for_each2());
+
 }

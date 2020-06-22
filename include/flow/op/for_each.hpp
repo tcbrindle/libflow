@@ -6,15 +6,15 @@
 
 namespace flow {
 
-inline constexpr auto for_each = [](auto flow, auto func) {
-    static_assert(is_flow<decltype(flow)>,
-        "First argument to flow::for_each() must be a Flow");
-    return std::move(flow).for_each(std::move(func));
+inline constexpr auto for_each = [](auto flowable, auto func) {
+    static_assert(is_flowable<decltype(flowable)>,
+        "First argument to flow::for_each() must be Flowable");
+    return flow::from(FLOW_FWD(flowable)).for_each(std::move(func));
 };
 
 template <typename Derived>
 template <typename Func>
-constexpr auto flow_base<Derived>::for_each(Func func) && -> Func
+constexpr auto flow_base<Derived>::for_each(Func func) -> Func
 {
     static_assert(std::is_invocable_v<Func&, item_t<Derived>>,
                   "Incompatible callable passed to for_each()");

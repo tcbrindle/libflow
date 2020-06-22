@@ -100,7 +100,7 @@ public:
     ///
     /// @func Callable with signature `(Init, item_t<Flow>) -> Init`
     /// @init Initial value of the reduction
-    /// @return The accumulated value
+    /// @returns The accumulated value
     template <typename Func, typename Init>
     constexpr auto fold(Func func, Init init) -> Init;
 
@@ -111,8 +111,12 @@ public:
     template <typename Func>
     constexpr auto fold(Func func);
 
+    /// Consumes the flow, applying the given function to each element
+    ///
+    /// @func A unary callable accepting this flow's item type
+    /// @returns The supplied function
     template <typename Func>
-    constexpr auto for_each(Func func) && -> Func;
+    constexpr auto for_each(Func func) -> Func;
 
     /// Consumes the flow, returning the number of items for which @pred
     /// returned true
