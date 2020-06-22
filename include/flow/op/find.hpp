@@ -6,6 +6,24 @@
 
 namespace flow {
 
+namespace detail {
+
+struct find_op {
+
+    template <typename Flowable, typename T, typename Cmp = std::equal_to<>>
+    constexpr auto operator()(Flowable&& flowable, const T& item, Cmp cmp = Cmp{}) const
+    {
+        static_assert(is_flowable<Flowable>,
+                      "First argument to flow::find() must be Flowable");
+        return flow::from(FLOW_FWD(flowable)).find(item, std::move(cmp));
+    }
+
+};
+
+} // namespace detail
+
+inline constexpr auto find = detail::find_op{};
+
 template <typename Derived>
 template <typename T, typename Cmp>
 constexpr auto flow_base<Derived>::find(const T& item, Cmp cmp)
@@ -19,24 +37,6 @@ constexpr auto flow_base<Derived>::find(const T& item, Cmp cmp)
       return invoke(cmp, *m, item) ? out{std::move(m)} : out{};
     }).val;
 }
-
-namespace detail {
-
-struct find_op {
-
-    template <typename Flow, typename T, typename Cmp = std::equal_to<>>
-    constexpr auto operator()(Flow&& flow, const T& item, Cmp cmp = Cmp{}) const
-    {
-        static_assert(is_flow<remove_cvref_t<decltype(flow)>>,
-                      "First argument to flow::find() must be a Flow");
-        return FLOW_FWD(flow).find(item, std::move(cmp));
-    }
-
-};
-
-}
-
-inline constexpr auto find = detail::find_op{};
 
 }
 

@@ -222,7 +222,7 @@ namespace detail {
 
 struct from_fn {
     template <typename T, typename = std::enable_if_t<is_flowable<T>>>
-    constexpr auto operator()(T&& t) const
+    constexpr auto operator()(T&& t) const  -> decltype(auto)
     {
         if constexpr (detail::has_member_to_flow<T>) {
             return FLOW_FWD(t).to_flow();

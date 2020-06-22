@@ -15,7 +15,7 @@ using remove_rref_t = std::conditional_t<
     std::is_rvalue_reference_v<T>, std::remove_reference_t<T>, T>;
 
 template <typename F>
-using next_t = decltype(std::declval<F&>().next());
+using next_t = decltype(std::declval<F>().next());
 
 template <typename F>
 using item_t = typename next_t<F>::value_type;
@@ -47,10 +47,10 @@ inline constexpr bool has_next<T, std::enable_if_t<is_maybe<next_t<T>>>> = true;
 
 } // namespace detail
 
-template <typename I>
+template <typename I, typename R = std::remove_reference_t<I>>
 inline constexpr bool is_flow
-    = std::is_base_of_v<flow_base<I>, I> &&
-      std::is_convertible_v<std::add_lvalue_reference_t<I>, flow_base<I>&> &&
+    = std::is_base_of_v<flow_base<R>, R> &&
+      std::is_convertible_v<std::add_lvalue_reference_t<I>, flow_base<R>&> &&
       detail::has_next<I>;
 
 } // namespace flow

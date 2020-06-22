@@ -22,7 +22,8 @@ private:
     constexpr auto derived() & -> Derived& { return static_cast<Derived&>(*this); }
     constexpr auto consume() -> Derived&& { return static_cast<Derived&&>(*this); }
 
-    friend constexpr auto to_flow(flow_base const& self) { return static_cast<Derived const&>(self); }
+    friend constexpr auto to_flow(flow_base& self) -> Derived& { return static_cast<Derived&>(self); }
+    friend constexpr auto to_flow(flow_base const& self) -> Derived const& { return static_cast<Derived const&>(self); }
     friend constexpr auto to_flow(flow_base&& self) { return self.consume(); }
 
 protected:
@@ -141,14 +142,21 @@ public:
     constexpr auto count(const T& value, Cmp cmp = {}) -> dist_t;
 
     /// Processes the flow until it finds an item that compares equal to
-    /// @item, using comparator @cmp.
+    /// `value`, using comparator `cmp`.
+    ///
     /// If the item is not found, returns an empty `maybe`.
     ///
     /// Unlike most operations, this function is short-circuiting: it will
     /// return immediately after finding an item, after which the flow can be
     /// restarted and the remaining items (if any) can be processed.
+    ///
+    /// @value Value to find
+    /// @cmp Comparator to use for the find operation (default: `std::equal<>`)
+    /// @returns A `maybe` containing the first item for which `cmp(value, item)`
+    ///          returned true, or an empty `maybe` if the flow was consumed without
+    ///          finding such an item.
     template <typename T, typename Cmp = std::equal_to<>>
-    constexpr auto find(const T& item, Cmp cmp = {});
+    constexpr auto find(const T& value, Cmp cmp = {});
 
     /// Returns `true` if the flow contains an item which compares equal to
     /// @item, using comparator @cmp.
