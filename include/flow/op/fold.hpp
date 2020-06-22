@@ -10,20 +10,20 @@ namespace detail {
 
 struct fold_op {
 
-    template <typename Flow, typename Func, typename Init>
-    constexpr auto operator()(Flow flow, Func func, Init init) const
+    template <typename Flowable, typename Func, typename Init>
+    constexpr auto operator()(Flowable&& flowable, Func func, Init init) const
     {
-        static_assert(is_flow<Flow>,
-                "First argument to flow::fold() must be a Flow");
-        return std::move(flow).fold(std::move(func), std::move(init));
+        static_assert(is_flowable<Flowable>,
+                "First argument to flow::fold() must be Flowable");
+        return flow::from(FLOW_FWD(flowable)).fold(std::move(func), std::move(init));
     }
 
-    template <typename Flow, typename Func>
-    constexpr auto operator()(Flow flow, Func func) const
+    template <typename Flowable, typename Func>
+    constexpr auto operator()(Flowable&& flowable, Func func) const
     {
-        static_assert(is_flow<Flow>,
-                      "First argument to flow::fold() must be a Flow");
-        return std::move(flow).fold(std::move(func));
+        static_assert(is_flowable<Flowable>,
+                      "First argument to flow::fold() must be Flowable");
+        return flow::from(FLOW_FWD(flowable)).fold(std::move(func));
     }
 };
 
@@ -33,7 +33,7 @@ inline constexpr auto fold = detail::fold_op{};
 
 template <typename Derived>
 template <typename Func, typename Init>
-constexpr auto flow_base<Derived>::fold(Func func, Init init) && -> Init
+constexpr auto flow_base<Derived>::fold(Func func, Init init) -> Init
 {
     static_assert(std::is_invocable_v<Func&, Init&&, item_t<Derived>>,
                   "Incompatible callable passed to fold()");
@@ -52,7 +52,7 @@ constexpr auto flow_base<Derived>::fold(Func func, Init init) && -> Init
 
 template <typename Derived>
 template <typename Func>
-constexpr auto flow_base<Derived>::fold(Func func) &&
+constexpr auto flow_base<Derived>::fold(Func func)
 {
     static_assert(std::is_default_constructible_v<value_t<Derived>>,
             "This flow's value type is not default constructible. "

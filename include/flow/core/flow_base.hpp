@@ -102,14 +102,14 @@ public:
     /// @init Initial value of the reduction
     /// @return The accumulated value
     template <typename Func, typename Init>
-    constexpr auto fold(Func func, Init init) && -> Init;
+    constexpr auto fold(Func func, Init init) -> Init;
 
     /// Consumes the flow, performing a functional left fold operation.
     ///
     /// This is a convenience overload, equivalent to `fold(func, value_t{})`
     /// where `value_t` is the value type of the flow.
     template <typename Func>
-    constexpr auto fold(Func func) &&;
+    constexpr auto fold(Func func);
 
     template <typename Func>
     constexpr auto for_each(Func func) && -> Func;
