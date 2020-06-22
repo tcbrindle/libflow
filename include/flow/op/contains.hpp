@@ -6,6 +6,22 @@
 
 namespace flow {
 
+namespace detail {
+
+struct contains_op {
+    template <typename Flowable, typename T, typename Cmp = std::equal_to<>>
+    constexpr auto operator()(Flowable&& flowable, const T& item, Cmp cmp = Cmp{}) const -> bool
+    {
+        static_assert(is_flowable<Flowable>,
+                      "First argument to flow::contains() must be Flowable");
+        return flow::from(FLOW_FWD(flowable)).contains(item, std::move(cmp));
+    }
+};
+
+}
+
+inline constexpr auto contains = detail::contains_op{};
+
 template <typename Derived>
 template <typename T, typename Cmp>
 constexpr auto flow_base<Derived>::contains(const T &item, Cmp cmp) -> bool
@@ -19,22 +35,6 @@ constexpr auto flow_base<Derived>::contains(const T &item, Cmp cmp) -> bool
           return invoke(cmp, val, item);
     });
 }
-
-namespace detail {
-
-struct contains_op {
-    template <typename Flow, typename T, typename Cmp = std::equal_to<>>
-    constexpr auto operator()(Flow&& flow, const T& item, Cmp cmp = Cmp{}) const -> bool
-    {
-        static_assert(is_flow<remove_cvref_t<Flow>>,
-            "First argument to flow::contains() must be a Flow");
-        return FLOW_FWD(flow).contains(item, std::move(cmp));
-    }
-};
-
-}
-
-inline constexpr auto contains = detail::contains_op{};
 
 }
 

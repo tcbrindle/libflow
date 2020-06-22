@@ -159,13 +159,21 @@ public:
     constexpr auto find(const T& value, Cmp cmp = {});
 
     /// Returns `true` if the flow contains an item which compares equal to
-    /// @item, using comparator @cmp.
+    /// `value`, using comparator `cmp`.
+    ///
+    /// This is a convenience method, equivalent to
+    /// `static_cast<bool>(my_flow.find(value, cmp))`.
     ///
     /// Unlike most operations, this function is short-circuiting: it will
     /// return immediately after finding an item, after which the flow can be
     /// restarted and the remaining items (if any) can be processed.
+    ///
+    /// @value Value to find
+    /// @cmp Comparator to use, defaults to `std::equal<>`
+    /// @return true iff the flow contained an item for which `cmp(value, item)`
+    ///          returned true.
     template <typename T, typename Cmp = std::equal_to<>>
-    constexpr auto contains(const T& item, Cmp cmp = {}) -> bool;
+    constexpr auto contains(const T& value, Cmp cmp = {}) -> bool;
 
     /// Consumes the flow, returning the sum of elements using `operator+`
     template <typename D = Derived>
