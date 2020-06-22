@@ -183,13 +183,9 @@ public:
     constexpr auto sum();
 
     /// Consumes the flow, returning the product of the elements using `operator*`
-    template <typename D = Derived>
-    constexpr auto product() && -> value_t<D>
-    {
-        static_assert(std::is_constructible_v<value_t<Derived>, int>,
-            "Flow's value type must be constructible from a literal 1");
-        return consume().fold(std::multiplies<>{}, value_t<Derived>{1});
-    }
+    ///
+    /// Requires that the flow's value type is constructible from a literal `1`
+    constexpr auto product();
 
     /// Consumes the flow, returning the smallest element.
     /// If the flow is empty, return an empty `maybe`
