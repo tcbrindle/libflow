@@ -175,12 +175,12 @@ public:
     template <typename T, typename Cmp = std::equal_to<>>
     constexpr auto contains(const T& value, Cmp cmp = {}) -> bool;
 
-    /// Consumes the flow, returning the sum of elements using `operator+`
-    template <typename D = Derived>
-    constexpr auto sum() && -> value_t<D>
-    {
-        return consume().fold(std::plus<>{});
-    }
+    /// Consumes the flow, returning the sum of items using `operator+`
+    ///
+    /// Requires that the flow's value type is default-constructible.
+    ///
+    /// This is a convenience method, equivalent to `fold(std::plus<>{})`
+    constexpr auto sum();
 
     /// Consumes the flow, returning the product of the elements using `operator*`
     template <typename D = Derived>
