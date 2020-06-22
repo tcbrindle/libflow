@@ -118,11 +118,15 @@ public:
     template <typename Func>
     constexpr auto for_each(Func func) -> Func;
 
-    /// Consumes the flow, returning the number of items for which @pred
+    /// Consumes the flow, returning the number of items for which `pred`
     /// returned true
+    ///
     /// Equivalent to `filter(pred).count()`.
+    ///
+    /// @pred A predicate accepting the flow's item type
+    /// @returns The number of items for which the predicate returned true
     template <typename Pred>
-    constexpr auto count_if(Pred pred) && -> dist_t;
+    constexpr auto count_if(Pred pred) -> dist_t;
 
     /// Consumes the flow, returning the number of items it contained
     constexpr auto count() && -> dist_t;
