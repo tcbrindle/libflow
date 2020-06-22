@@ -88,13 +88,7 @@ public:
     /// `try_fold()`. For most user code, higher-level functions such as
     /// `for_each()` will be more convenient.
     template <typename Func>
-    constexpr auto try_for_each(Func func)
-    {
-        using result_t = std::invoke_result_t<Func&, next_t<Derived>&&>;
-        return derived().try_fold([&func](auto&& /*unused*/, auto&& m) -> decltype(auto) {
-            return invoke(func, FLOW_FWD(m));
-        }, result_t{});
-    }
+    constexpr auto try_for_each(Func func);
 
     /// Consumes the flow, performing a functional left fold operation.
     ///
