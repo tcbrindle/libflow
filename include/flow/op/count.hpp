@@ -10,30 +10,30 @@ namespace detail {
 
 struct count_op {
 
-    template <typename Flow>
-    constexpr auto operator()(Flow flow) const
+    template <typename Flowable>
+    constexpr auto operator()(Flowable&& flowable) const
     {
-        static_assert(is_flow<Flow>,
-            "Argument to flow::count() must be a Flow");
-        return std::move(flow).count();
+        static_assert(is_flow<Flowable>,
+            "Argument to flow::count() must be Flowable");
+        return flow::from(FLOW_FWD(flowable)).count();
     }
 
-    template <typename Flow, typename T, typename Cmp = std::equal_to<>>
-    constexpr auto operator()(Flow flow, const T& item, Cmp cmp = Cmp{}) const
+    template <typename Flowable, typename T, typename Cmp = std::equal_to<>>
+    constexpr auto operator()(Flowable&& flowable, const T& value, Cmp cmp = Cmp{}) const
     {
-        static_assert(is_flow<Flow>,
-                      "Argument to flow::count() must be a Flow");
-        return std::move(flow).count(item, std::move(cmp));
+        static_assert(is_flowable<Flowable>,
+                      "Argument to flow::count() must be Flowable");
+        return flow::from(FLOW_FWD(flowable)).count(value, std::move(cmp));
     }
 
 };
 
-}
+} // namespace detail
 
 inline constexpr auto count = detail::count_op{};
 
 template <typename Derived>
-constexpr auto flow_base<Derived>::count() && -> dist_t
+constexpr auto flow_base<Derived>::count() -> dist_t
 {
     return consume().count_if([](auto const& /*unused*/) {
         return true;
@@ -42,7 +42,7 @@ constexpr auto flow_base<Derived>::count() && -> dist_t
 
 template <typename Derived>
 template <typename T, typename Cmp>
-constexpr auto flow_base<Derived>::count(const T& item, Cmp cmp) && -> dist_t
+constexpr auto flow_base<Derived>::count(const T& item, Cmp cmp) -> dist_t
 {
     using const_item_t = std::add_lvalue_reference_t<
         std::add_const_t<std::remove_reference_t<item_t<Derived>>>>;

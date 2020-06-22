@@ -124,17 +124,21 @@ public:
     /// Equivalent to `filter(pred).count()`.
     ///
     /// @pred A predicate accepting the flow's item type
-    /// @returns The number of items for which the predicate returned true
+    /// @returns The number of items for which the `pred(item)` returned true
     template <typename Pred>
     constexpr auto count_if(Pred pred) -> dist_t;
 
     /// Consumes the flow, returning the number of items it contained
-    constexpr auto count() && -> dist_t;
+    constexpr auto count() -> dist_t;
 
     /// Consumes the flow, returning a count of the number of items which
-    /// compared equal to @item, using comparator @cmp
+    /// compared equal to `value`, using comparator `cmp`
+    ///
+    /// @value Value which each item in the flow should be compared to
+    /// @cmp The comparator to be used (default is std::equal<>)
+    /// @returns The number of items for which `cmp(value, item)` returned true
     template <typename T, typename Cmp = std::equal_to<>>
-    constexpr auto count(const T& item, Cmp cmp = {}) && -> dist_t;
+    constexpr auto count(const T& value, Cmp cmp = {}) -> dist_t;
 
     /// Processes the flow until it finds an item that compares equal to
     /// @item, using comparator @cmp.
