@@ -18,10 +18,6 @@ constexpr bool test_all()
         return false;
     }
 
-    if (not flow::all(std::array<int, 0>{}, flow::pred::positive)) {
-        return false;
-    }
-
     if (not flow::of(1, 2, 3, 4, 5).all(flow::pred::positive)) {
         return false;
     }
@@ -76,10 +72,6 @@ constexpr bool test_none()
         return false;
     }
 
-    if (not flow::none(std::array<int, 0>{}, flow::pred::positive)) {
-        return false;
-    }
-
     if (not flow::of(1, 2, 3, 4, 5).none(flow::pred::negative)) {
         return false;
     }
@@ -129,10 +121,6 @@ constexpr bool test_any()
 {
     // test empty flow
     if (flow::empty<int>().any(flow::pred::positive)) {
-        return false;
-    }
-
-    if (flow::any(std::array<int, 0>{}, flow::pred::positive)) {
         return false;
     }
 
