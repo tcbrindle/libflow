@@ -187,29 +187,28 @@ public:
     /// Requires that the flow's value type is constructible from a literal `1`
     constexpr auto product();
 
-    /// Consumes the flow, returning the smallest element.
-    /// If the flow is empty, return an empty `maybe`
+    /// Consumes the flow, returning the smallest item according `cmp`
+    ///
+    /// If several items are equally minimal, returns the first. If the flow
+    /// is empty, returns an empty `maybe`.
     template <typename Cmp = std::less<>>
-    constexpr auto min(Cmp cmp = Cmp{}) &&
-    {
-        return consume().next().map([this, &cmp] (auto&& init) {
-          return consume().fold([&cmp](auto&& val, auto&& acc) -> decltype(auto) {
-            return invoke(cmp, val, acc) ? FLOW_FWD(val) : FLOW_FWD(acc);
-          }, FLOW_FWD(init));
-        });
-    }
+    constexpr auto min(Cmp cmp = Cmp{});
 
-    /// Consumes the flow, returning the largest element.
-    /// If the flow is empty, return an empty `maybe`
+    /// Consumes the flow, returning the largest item according to `cmp`
+    ///
+    /// If several items are equal maximal, returns the last. If the flow
+    /// is empty, returns an empty `maybe`.
     template <typename Cmp = std::less<>>
-    constexpr auto max(Cmp cmp = Cmp{}) &&
-    {
-        return consume().next().map([this, &cmp] (auto&& init) {
-            return consume().fold([&cmp](auto&& val, auto acc) {
-                return !invoke(cmp, val, acc) ? FLOW_FWD(val) : std::move(acc);
-            }, FLOW_FWD(init));
-        });
-    }
+    constexpr auto max(Cmp cmp = Cmp{});
+
+    /// Consumes the flow, returning both the minimum and maximum values
+    /// according to `cmp`.
+    ///
+    /// If several items are equal minimal, returns the first. If several items
+    /// are equally maximal, returns the last. If the flow is empty, returns
+    /// an empty `maybe`.
+    template <typename Cmp = std::less<>>
+    constexpr auto minmax(Cmp cmp = Cmp{});
 
     /// Iterates over the flow, returning true if all the items satisfy the predicate
     /// Returns true for an empty flow

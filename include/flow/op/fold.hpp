@@ -45,7 +45,7 @@ constexpr auto flow_base<Derived>::fold(Func func, Init init) -> Init
         constexpr explicit operator bool() const { return true; }
     };
 
-    return consume().try_fold([&func](always acc, auto m) {
+    return derived().try_fold([&func](always acc, auto m) {
         return always{func(std::move(acc).val, *std::move(m))};
     }, always{std::move(init)}).val;
 }
