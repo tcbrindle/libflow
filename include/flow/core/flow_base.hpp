@@ -234,21 +234,15 @@ public:
     template <typename Pred>
     constexpr auto any(Pred pred) -> bool;
 
-    /// Consumes the flow, returning true if the elements are sorted according to @cmp.
+    /// Consumes the flow, returning true if the elements are sorted according to
+    /// the given comparator, defaulting to std::less<>.
+    ///
+    /// Returns true for an empty flow.
+    ///
+    /// Unlike most operations, this function is short-circuiting. It will stop
+    /// processing the flow when it finds an item which is not in sorted order.
     template <typename Cmp = std::less<>>
-    constexpr auto is_sorted(Cmp cmp = Cmp{}) && -> bool
-    {
-        return consume().try_fold([last = derived().next(), &cmp]
-        (auto const& /*unused*/, auto next) mutable {
-            if (invoke(cmp, *next, *last)) {
-                return false;
-            } else {
-                last = std::move(next);
-                return true;
-            }
-        }, true);
-
-    }
+    constexpr auto is_sorted(Cmp cmp = Cmp{}) -> bool;
 
     template <typename NextFn>
     constexpr auto adapt(NextFn next_fn) &&;

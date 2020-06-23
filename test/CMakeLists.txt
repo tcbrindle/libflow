@@ -29,6 +29,7 @@ add_executable(test-libflow
     test_group_by.cpp
     test_inspect.cpp
     test_interleave.cpp
+    test_is_sorted.cpp
     test_minmax.cpp
     test_product.cpp
     test_sum.cpp

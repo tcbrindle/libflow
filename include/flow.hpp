@@ -21,6 +21,7 @@
 #include <flow/op/group_by.hpp>
 #include <flow/op/inspect.hpp>
 #include <flow/op/interleave.hpp>
+#include <flow/op/is_sorted.hpp>
 #include <flow/op/minmax.hpp>
 #include <flow/op/product.hpp>
 #include <flow/op/sum.hpp>
