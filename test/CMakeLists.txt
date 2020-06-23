@@ -17,6 +17,7 @@ add_executable(test-libflow
     test_of.cpp
 
     # Operations
+    test_all_any_none.cpp
     test_chunk.cpp
     test_collect.cpp
     test_contains.cpp

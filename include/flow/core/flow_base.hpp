@@ -210,37 +210,29 @@ public:
     template <typename Cmp = std::less<>>
     constexpr auto minmax(Cmp cmp = Cmp{});
 
-    /// Iterates over the flow, returning true if all the items satisfy the predicate
-    /// Returns true for an empty flow
+    /// Processes the flow, returning true if all the items satisfy the predicate.
+    /// Returns `true` for an empty flow.
+    ///
+    /// Unlike most operations, this function is short-circuiting. It will stop
+    /// processing the flow when an item fails to satisfy the predicate.
     template <typename Pred>
-    constexpr auto all(Pred pred) -> bool
-    {
-        static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>,
-                      "Predicate must be callable with the Flow's item_type,"
-                      " and must return bool");
-        return consume().try_fold([&pred](bool /*unused*/, auto m) {
-            return invoke(pred, *std::move(m));
-        }, true);
-    }
+    constexpr auto all(Pred pred) -> bool;
 
-    /// Iterates over the flow, returning false if any element satisfies the predicate.
-    /// Returns true for an empty flow
+    /// Processes the flow, returning false if any element satisfies the predicate.
+    /// Returns `true` for an empty flow.
+    ///
+    /// Unlike most operations, this function is short-circuiting. It will stop
+    /// processing the flow when an item satisfies the predicate.
     template <typename Pred>
-    constexpr auto none(Pred pred) -> bool
-    {
-        static_assert(std::is_invocable_r_v<bool, Pred&, item_t<Derived>>,
-                      "Predicate must be callable with the Flow's item_type,"
-                      " and must return bool");
-        return consume().all(pred::not_(pred));
-    }
+    constexpr auto none(Pred pred) -> bool;
 
-    /// Iterates over the flow, returning true if any element satisfies the predicate.
-    /// Returns false for an empty flow
+    /// Processes the flow, returning true if any element satisfies the predicate.
+    /// Returns `false` for an empty flow.
+    ///
+    /// Unlike most operations, this function is short-circuiting. It will stop
+    /// processing the flow when an item satisfies the predicate.
     template <typename Pred>
-    constexpr auto any(Pred pred) -> bool
-    {
-        return !consume().none(std::move(pred));
-    }
+    constexpr auto any(Pred pred) -> bool;
 
     /// Consumes the flow, returning true if the elements are sorted according to @cmp.
     template <typename Cmp = std::less<>>

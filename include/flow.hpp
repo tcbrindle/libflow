@@ -7,6 +7,7 @@
 #include <flow/core/predicates.hpp>
 
 #include <flow/op/adapt.hpp>
+#include <flow/op/all_any_none.hpp>
 #include <flow/op/chunk.hpp>
 #include <flow/op/collect.hpp>
 #include <flow/op/contains.hpp>
