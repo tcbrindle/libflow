@@ -18,6 +18,7 @@ namespace flow {
 
 template <typename Derived>
 struct flow_base {
+
 private:
     constexpr auto derived() & -> Derived& { return static_cast<Derived&>(*this); }
     constexpr auto consume() -> Derived&& { return static_cast<Derived&&>(*this); }
@@ -247,33 +248,8 @@ public:
     template <typename NextFn>
     constexpr auto adapt(NextFn next_fn) &&;
 
-private:
     template <typename Func>
-    struct map_adaptor : flow_base<map_adaptor<Func>> {
-        constexpr map_adaptor(Derived&& self, Func&& func)
-            : self_(std::move(self)),
-              func_(std::move(func))
-        {}
-
-        constexpr auto next() -> maybe<std::invoke_result_t<Func&, item_t<Derived>>>
-        {
-            return self_.next().map(func_);
-        }
-
-        Derived self_;
-        FLOW_NO_UNIQUE_ADDRESS Func func_;
-    };
-
-public:
-    template <typename Func>
-    constexpr auto map(Func func) && -> map_adaptor<Func>
-    {
-        static_assert(std::is_invocable_v<Func&, item_t<Derived>&&>,
-            "Incompatible callable passed to map()");
-        static_assert(!std::is_void_v<std::invoke_result_t<Func&, item_t<Derived>&&>>,
-            "Map cannot be used with a function returning void");
-        return map_adaptor<Func>(consume(), std::move(func));
-    }
+    constexpr auto map(Func func) &&;
 
     template <typename = Derived>
     constexpr auto deref() &&

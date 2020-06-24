@@ -20,6 +20,8 @@
 
 #define FLOW_FWD(x) (static_cast<decltype(x)&&>(x))
 
+#define FLOW_COPY(x) (static_cast<remove_cvref_t<decltype(x)>>(x))
+
 #define FLOW_FOR(VAR_DECL, ...) \
     if (auto&& _flow = (__VA_ARGS__); true) \
         while (auto _a = _flow.next()) \
