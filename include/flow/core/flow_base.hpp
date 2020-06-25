@@ -57,7 +57,7 @@ public:
     /// value.
     ///
     /// Note that the type of the second parameter to `func` differs from plain
-    /// `fold()`: this version takes a `maybe`, which `fold()` unwraps for
+    /// fold(): this version takes a `maybe`, which fold() unwraps for
     /// convenience.
     ///
     /// Because this function is short-circuiting, the flow may be restarted
@@ -66,6 +66,11 @@ public:
     /// This is the lowest-level reduction operation, on which all the other
     /// reductions are (eventually) based. For most user code, one of the
     /// higher-level operations is usually more convenient.
+    ///
+    /// @param func Callable with signature compatible with `(Init, maybe<next_t>) -> Init`
+    /// @param init Initial value for the reduction. Must be contextually convertible to `bool`.
+    /// @return The value accumulated at the point that the flow was exhausted or `(bool) init`
+    ///         evaluated to `false`.
     template <typename Func, typename Init>
     constexpr auto try_fold(Func func, Init init) -> Init;
 
@@ -75,24 +80,28 @@ public:
     /// return value of the function evaluates to `false`, it immediately exits,
     /// providing the last function return value.
     ///
-    /// `try_for_each()` requires that the return type of `func` is "bool-ish":
+    /// try_for_each() requires that the return type of `func` is "bool-ish":
     /// that it is default-constructible, move-assignable, and contextually
     /// convertible to `bool`.
     ///
     /// Note that the type of the parameter to `func` differs from plain
-    /// `for_each()`: this version takes a `maybe`, which `for_each()` unwraps for
+    /// for_each(): this version takes a #flow::maybe, which for_each() unwraps for
     /// convenience.
     ///
     /// Because this function is short-circuiting, the flow may be restarted
     /// after it has returned and the remaining items (if any) may be processed.
     ///
     /// This is a low-level operation, effectively a stateless version of
-    /// `try_fold()`. For most user code, higher-level functions such as
-    /// `for_each()` will be more convenient.
+    /// try_fold(). For most user code, higher-level functions such as
+    /// for_each() will be more convenient.
+    ///
+    /// @param func Callable with signature compatible with `(next_t<Flow>) -> T`,
+    ///             where `T` is "bool-ish"
+    /// @returns A copy of `func`
     template <typename Func>
     constexpr auto try_for_each(Func func);
 
-    /// Consumes the flow, performing a functional left fold operation.
+    /// Exhausts the flow, performing a functional left fold operation.
     ///
     /// Given a callable `func` and an initial value `init`, calls
     /// `init = func(std::move(init), i)` for each item `i` in the flow. Once
@@ -100,45 +109,49 @@ public:
     ///
     /// This is the same operation as `std::accumulate`.
     ///
-    /// @func Callable with signature `(Init, item_t<Flow>) -> Init`
-    /// @init Initial value of the reduction
-    /// @returns The accumulated value
+    /// @param func Callable with signature compatible with `(Init, item_t<Flow>) -> Init`
+    /// @param init Initial value of the reduction
+    /// @returns The accumulated value of type `Init`
     template <typename Func, typename Init>
     constexpr auto fold(Func func, Init init) -> Init;
 
-    /// Consumes the flow, performing a functional left fold operation.
+    /// Exhausts the flow, performing a functional left fold operation.
     ///
     /// This is a convenience overload, equivalent to `fold(func, value_t{})`
     /// where `value_t` is the value type of the flow.
+    ///
+    /// @param func Callable with a signature compatible with `(value_t<Flow>, item_t<Flow>) -> value_t<Flow>`
+    /// @returns The accumulated value of type `value_t<Flow>`
     template <typename Func>
     constexpr auto fold(Func func);
 
-    /// Consumes the flow, applying the given function to each element
+    /// Exhausts the flow, applying the given function to each element
     ///
-    /// @func A unary callable accepting this flow's item type
-    /// @returns The supplied function
+    /// @param func A unary callable accepting this flow's item type
+    /// @returns A copy of `func`
     template <typename Func>
     constexpr auto for_each(Func func) -> Func;
 
-    /// Consumes the flow, returning the number of items for which `pred`
+    /// Exhausts the flow, returning the number of items for which `pred`
     /// returned true
     ///
     /// Equivalent to `filter(pred).count()`.
     ///
-    /// @pred A predicate accepting the flow's item type
+    /// @param pred A predicate accepting the flow's item type
     /// @returns The number of items for which the `pred(item)` returned true
     template <typename Pred>
     constexpr auto count_if(Pred pred) -> dist_t;
 
-    /// Consumes the flow, returning the number of items it contained
+    /// Exhausts the flow, returning the number of items it contained
     constexpr auto count() -> dist_t;
 
-    /// Consumes the flow, returning a count of the number of items which
+    /// Exhausts the flow, returning a count of the number of items which
     /// compared equal to `value`, using comparator `cmp`
     ///
-    /// @value Value which each item in the flow should be compared to
-    /// @cmp The comparator to be used (default is std::equal<>)
-    /// @returns The number of items for which `cmp(value, item)` returned true
+    /// @param value Value which each item in the flow should be compared to
+    /// @param cmp The comparator to be used, with a signature compatible with
+    ///      `(T, item_t<Flow>) -> bool` (default is `std::equal<>`)
+    /// @returns The number of items for which `cmp(value, item)` returned `true`
     template <typename T, typename Cmp = std::equal_to<>>
     constexpr auto count(const T& value, Cmp cmp = {}) -> dist_t;
 
@@ -151,10 +164,11 @@ public:
     /// return immediately after finding an item, after which the flow can be
     /// restarted and the remaining items (if any) can be processed.
     ///
-    /// @value Value to find
-    /// @cmp Comparator to use for the find operation (default: `std::equal<>`)
-    /// @returns A `maybe` containing the first item for which `cmp(value, item)`
-    ///          returned true, or an empty `maybe` if the flow was consumed without
+    /// @param value Value to find
+    /// @param cmp Comparator to use for the find operation, with a signature
+    ///            compatible with `(T, item_t<Flow>) -> bool` (default: `std::equal<>`)
+    /// @returns A flow::maybe containing the first item for which `cmp(value, item)`
+    ///          returned `true`, or an empty `maybe` if the flow was exhausted without
     ///          finding such an item.
     template <typename T, typename Cmp = std::equal_to<>>
     constexpr auto find(const T& value, Cmp cmp = {});
@@ -169,23 +183,24 @@ public:
     /// return immediately after finding an item, after which the flow can be
     /// restarted and the remaining items (if any) can be processed.
     ///
-    /// @value Value to find
-    /// @cmp Comparator to use, defaults to `std::equal<>`
-    /// @return true iff the flow contained an item for which `cmp(value, item)`
-    ///          returned true.
+    /// @param value Value to find
+    /// @param cmp Comparator to use for the find operation, with a signature
+    ///           compatible with `(T, item_t<Flow>) -> bool` (default: `std::equal<>`)
+    /// @returns `true` iff the flow contained an item for which `cmp(value, item)`
+    ///          returned `true`.
     template <typename T, typename Cmp = std::equal_to<>>
     constexpr auto contains(const T& value, Cmp cmp = {}) -> bool;
 
-    /// Consumes the flow, returning the sum of items using `operator+`
+    /// Exhausts the flow, returning the sum of items using `operator+`
     ///
     /// Requires that the flow's value type is default-constructible.
     ///
     /// This is a convenience method, equivalent to `fold(std::plus<>{})`
     constexpr auto sum();
 
-    /// Consumes the flow, returning the product of the elements using `operator*`
+    /// Exhausts the flow, returning the product of the elements using `operator*`
     ///
-    /// Requires that the flow's value type is constructible from a literal `1`
+    /// @note The flow's value type must be constructible from a literal `1`
     constexpr auto product();
 
     /// Consumes the flow, returning the smallest item according `cmp`
@@ -248,6 +263,17 @@ public:
     template <typename NextFn>
     constexpr auto adapt(NextFn next_fn) &&;
 
+    /// Consumes the flow, returning a new flow which lazily invokes the given
+    /// callable for each item as it is processed.
+    ///
+    /// Another way of thinking about it is that `map` takes a flow whose item
+    /// type is `T` and turns it into a flow whose item type is `R`, where `R`
+    /// is the result of applying `func` to each item.
+    ///
+    /// It is equivalent to C++20 `std::views::transform`.
+    ///
+    /// \param func A callable with signature compatible with `(item_t<F>) -> R`
+    /// \return A new flow whose item type is `R`, the return type of `func`
     template <typename Func>
     constexpr auto map(Func func) &&;
 

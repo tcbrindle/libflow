@@ -6,6 +6,17 @@
 
 namespace flow {
 
+#ifdef DOXYGEN
+/// Free-function version of flow_base::map()
+///
+/// @param flowable A Flowable type
+/// @param func A callable to apply to each element
+/// @return Equivalent to `flow::from(forward(flowable)).map(move(func))`
+constexpr auto map(auto&& flowable, auto func);
+#endif
+
+/// @cond
+
 namespace detail {
 
 template <typename Flow, typename Func>
@@ -53,6 +64,8 @@ constexpr auto flow_base<D>::map(Func func) &&
 
     return detail::map_adaptor<D, Func>(consume(), std::move(func));
 }
+
+/// @endcond
 
 }
 

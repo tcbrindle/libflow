@@ -11,6 +11,8 @@ Welcome to libflow's documentation!
 
    about
    getting_started
+   using
+   reference
    glossary
 
 Indices and tables
@@ -23,4 +25,6 @@ Indices and tables
 Docs
 ====
 
-.. doxygenfunction:: flow::flow_base::min
+//.. doxygenstruct:: flow::flow_base
+//   :members:
+
