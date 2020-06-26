@@ -2,6 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 #include <string_view>
 
@@ -102,7 +103,10 @@ constexpr bool test_map_pmd()
 
     return true;
 }
+
+#if !COMPILER_IS_GCC
 static_assert(test_map_pmd());
+#endif
 
 constexpr bool test_map_identity()
 {
