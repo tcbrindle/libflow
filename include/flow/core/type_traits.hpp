@@ -23,6 +23,9 @@ using item_t = typename next_t<F>::value_type;
 template <typename F>
 using value_t = remove_cvref_t<item_t<F>>;
 
+template <typename F>
+using subflow_t = decltype(std::declval<F&>().subflow());
+
 using dist_t = std::make_signed_t<std::size_t>;
 
 template <typename T>
@@ -52,6 +55,20 @@ inline constexpr bool is_flow
     = std::is_base_of_v<flow_base<R>, R> &&
       std::is_convertible_v<std::add_lvalue_reference_t<I>, flow_base<R>&> &&
       detail::has_next<I>;
+
+namespace detail {
+
+template <typename, typename = void>
+inline constexpr bool has_subflow = false;
+
+template <typename T>
+inline constexpr bool has_subflow<
+    T, std::enable_if_t<is_flow<subflow_t<T>>>> = true;
+
+} // namespace detail
+
+template <typename F>
+inline constexpr bool is_multipass_flow = is_flow<F> && detail::has_subflow<F>;
 
 } // namespace flow
 

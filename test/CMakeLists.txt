@@ -5,6 +5,7 @@ add_executable(test-libflow
     test_maybe.cpp
     test_predicates.cpp
     test_basic.cpp
+    test_subflow.cpp
 
     # Sources
     test_any_flow.cpp

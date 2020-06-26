@@ -48,6 +48,13 @@ public:
         return derived().next();
     }
 
+    template <typename D = Derived,
+              typename = std::enable_if_t<std::is_copy_constructible_v<D>>>
+    constexpr auto subflow() & -> D
+    {
+        return derived();
+    }
+
     /// Short-circuiting left fold operation.
     ///
     /// Given a function `func` and an initial value `init`, repeatedly calls

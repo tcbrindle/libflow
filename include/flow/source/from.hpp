@@ -51,6 +51,12 @@ private:
     R* ptr_;
 };
 
+template <typename>
+inline constexpr bool is_range_ref = false;
+
+template <typename R>
+inline constexpr bool is_range_ref<range_ref<R>> = true;
+
 template <typename R>
 struct stl_input_range_adaptor : flow_base<stl_input_range_adaptor<R>> {
 private:
@@ -122,7 +128,21 @@ public:
         }
     }
 
+    constexpr auto subflow() &
+    {
+        if  constexpr (is_range_ref<R>) {
+            return *this;
+        } else {
+            auto s = stl_fwd_range_adaptor<range_ref<R>>(rng_);
+            s.cur_ = cur_;
+            return s;
+        }
+    }
+
 private:
+    template <typename>
+    friend struct stl_fwd_range_adaptor;
+
     R rng_;
     iterator_t<R> cur_ = std::begin(rng_);
 };
@@ -174,7 +194,21 @@ struct stl_ra_range_adaptor : flow_base<stl_ra_range_adaptor<R>> {
         }
     }
 
+    constexpr auto subflow() &
+    {
+        if constexpr (is_range_ref<R>) {
+            return *this; // just copy
+        } else {
+            auto f = stl_ra_range_adaptor<range_ref<R>>(rng_);
+            f.idx_ = idx_;
+            return f;
+        }
+    }
+
 private:
+    template <typename>
+    friend struct stl_ra_range_adaptor;
+
     R rng_{};
     dist_t idx_ = 0;
 };

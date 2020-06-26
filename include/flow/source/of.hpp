@@ -26,6 +26,11 @@ struct of : flow_base<of<T, N>> {
         return arr_.next();
     }
 
+    constexpr auto subflow() &
+    {
+        return arr_.subflow();
+    }
+
 private:
     detail::array_flow<T, N> arr_;
 };
