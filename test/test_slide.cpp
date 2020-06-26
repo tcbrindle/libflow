@@ -14,7 +14,7 @@ constexpr bool test_slide_no_partial(Ints ints)
     // Expects: [ [1], [2], [3], [4], [5] ]
     // (this "unflattens" the flow)
     {
-        auto f = flow::from(ints).slide(1);
+        auto f = flow::slide(ints, 1);
 
         for (int i : ints) {
             auto inner = f.next().value();
@@ -37,7 +37,7 @@ constexpr bool test_slide_no_partial(Ints ints)
     // Test window_size == 2, step_size == 1
     // Expects [ [1, 2], [2, 3], [3, 4], [4, 5] ]
     {
-        auto f = flow::from(ints).slide(2);
+        auto f = flow::slide(ints, 2);
 
         bool success =
             f.next().value().equal(flow::of(1, 2)) &&
@@ -55,7 +55,7 @@ constexpr bool test_slide_no_partial(Ints ints)
     // Expects [ [1, 2], [3, 4] ]
     // (This is like chunk, but with no final partial chunk)
     {
-        auto f = flow::from(ints).slide(2, 2);
+        auto f = flow::slide(ints, 2, 2);
 
         bool success =
             f.next().value().equal(flow::of(1, 2)) &&

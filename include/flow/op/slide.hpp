@@ -115,6 +115,18 @@ public:
 
 }
 
+inline constexpr auto slide = [](auto&& flowable,
+                                 dist_t window_size,
+                                 dist_t step_size = 1,
+                                 bool partial_windows = false)
+{
+    static_assert(is_multipass_flow<flow_t<decltype(flowable)>>,
+                  "Argument to slide() must be a multipass flowable");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).slide(window_size,
+                                                           step_size,
+                                                           partial_windows);
+};
+
 template <typename D>
 constexpr auto flow_base<D>::slide(dist_t window_size,
                                    dist_t step_size,
