@@ -34,6 +34,7 @@ add_executable(test-libflow
     test_map.cpp
     test_minmax.cpp
     test_product.cpp
+    test_slide.cpp
     test_sum.cpp
     test_to.cpp
     test_zip_with.cpp

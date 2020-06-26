@@ -25,6 +25,7 @@
 #include <flow/op/map.hpp>
 #include <flow/op/minmax.hpp>
 #include <flow/op/product.hpp>
+#include <flow/op/slide.hpp>
 #include <flow/op/sum.hpp>
 #include <flow/op/to_range.hpp>
 #include <flow/op/try_fold.hpp>
