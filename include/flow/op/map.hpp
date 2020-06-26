@@ -39,6 +39,12 @@ struct map_adaptor : flow_base<map_adaptor<Flow, Func>> {
         return flow_.advance(dist).map(func_);
     }
 
+    template <typename F = Flow>
+    constexpr auto subflow() & -> map_adaptor<subflow_t<F>, Func>
+    {
+        return map_adaptor<decltype(flow_.subflow()), Func>(flow_.subflow(), func_);
+    }
+
 private:
     Flow flow_;
     FLOW_NO_UNIQUE_ADDRESS Func func_;

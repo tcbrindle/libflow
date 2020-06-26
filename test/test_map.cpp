@@ -164,6 +164,22 @@ constexpr bool test_map_identity()
 }
 static_assert(test_map_identity());
 
+constexpr bool test_map_subflow()
+{
+    auto f = flow::map(std::array{1, 2, 3, 4, 5},
+                       [](int i) { return i * i; });
+
+    if (not f.subflow().equal(flow::of{1, 4, 9, 16, 25})) {
+        return false;
+    }
+
+    if (not (f.equal(flow::of{1, 4, 9, 16, 25}))) {
+        return false;
+    }
+
+    return true;
+}
+static_assert(test_map_subflow());
 
 TEST_CASE("map()", "[flow.map]")
 {
@@ -172,6 +188,7 @@ TEST_CASE("map()", "[flow.map]")
     REQUIRE(test_map_pmf());
     REQUIRE(test_map_pmd());
     REQUIRE(test_map_identity());
+    REQUIRE(test_map_subflow());
 }
 
 }

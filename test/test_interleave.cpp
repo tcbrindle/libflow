@@ -43,6 +43,21 @@ constexpr bool test_interleave()
         }
     }
 
+    // test subflow
+    {
+        auto f = flow::of{1, 2, 3}
+                     .interleave(flow::of{9}.cycle());
+        (void) f.next();
+
+        bool b =
+            f.subflow().equal(flow::of(9, 2, 9, 3, 9)) &&
+            f.equal(flow::of{9, 2, 9, 3, 9});
+
+        if (!b) {
+            return false;
+        }
+    }
+
     return true;
 }
 static_assert(test_interleave());

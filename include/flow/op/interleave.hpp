@@ -23,6 +23,18 @@ struct interleave_adaptor : flow_base<interleave_adaptor<Flow1, Flow2>> {
         return item;
     }
 
+    template <typename F1 = Flow1, typename F2 = Flow2>
+    constexpr auto subflow() & -> interleave_adaptor<subflow_t<F1>, subflow_t<F2>>
+    {
+        auto i = interleave_adaptor<subflow_t<F1>, subflow_t<F2>>(flow1_.subflow(), flow2_.subflow());
+        i.first_ = first_;
+        return i;
+    }
+
+private:
+    template <typename, typename>
+    friend struct interleave_adaptor;
+
     Flow1 flow1_;
     Flow2 flow2_;
     bool first_ = true;

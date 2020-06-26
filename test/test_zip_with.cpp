@@ -26,6 +26,47 @@ constexpr bool test_zip_with3()
 }
 static_assert(test_zip_with3());
 
+constexpr bool test_zip_with2_subflow()
+{
+    auto sum = [](auto... args) { return (args + ...); };
+
+    auto f = flow::ints(0, 5).zip_with(sum, flow::ints(10));
+
+    (void) f.next();
+
+    if (not f.subflow().equal(std::array{12, 14, 16, 18})) {
+        return false;
+    }
+
+    if (not f.equal(std::array{12, 14, 16, 18})) {
+        return false;
+    }
+
+    return true;
+}
+static_assert(test_zip_with2_subflow());
+
+constexpr bool test_zip_with3_subflow()
+{
+    auto prod = [](auto... args) { return (args * ...); };
+
+    auto f = flow::zip_with(prod, flow::ints(1), flow::ints(1), flow::ints(1))
+        .take(5);
+
+    f.next();
+
+    if (not f.subflow().equal(std::array{8, 27, 64, 125})) {
+        return false;
+    }
+
+    if (not f.equal(std::array{8, 27, 64, 125})) {
+        return false;
+    }
+
+    return true;
+}
+static_assert(test_zip_with3_subflow());
+
 TEST_CASE("zip_with", "[flow.zip_with]")
 {
     std::vector numbers = {0, 1, 2, 3};
