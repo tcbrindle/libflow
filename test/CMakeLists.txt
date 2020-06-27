@@ -39,8 +39,6 @@ add_executable(test-libflow
     test_sum.cpp
     test_to.cpp
     test_zip_with.cpp
-
-    test_quick.cpp
 )
 target_link_libraries(test-libflow flow)
 
