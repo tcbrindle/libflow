@@ -210,21 +210,21 @@ public:
     /// @note The flow's value type must be constructible from a literal `1`
     constexpr auto product();
 
-    /// Consumes the flow, returning the smallest item according `cmp`
+    /// Exhausts the flow, returning the smallest item according `cmp`
     ///
     /// If several items are equally minimal, returns the first. If the flow
     /// is empty, returns an empty `maybe`.
     template <typename Cmp = std::less<>>
     constexpr auto min(Cmp cmp = Cmp{});
 
-    /// Consumes the flow, returning the largest item according to `cmp`
+    /// Exhausts the flow, returning the largest item according to `cmp`
     ///
     /// If several items are equal maximal, returns the last. If the flow
     /// is empty, returns an empty `maybe`.
     template <typename Cmp = std::less<>>
     constexpr auto max(Cmp cmp = Cmp{});
 
-    /// Consumes the flow, returning both the minimum and maximum values
+    /// Exhausts the flow, returning both the minimum and maximum values
     /// according to `cmp`.
     ///
     /// If several items are equal minimal, returns the first. If several items
@@ -257,7 +257,7 @@ public:
     template <typename Pred>
     constexpr auto any(Pred pred) -> bool;
 
-    /// Consumes the flow, returning true if the elements are sorted according to
+    /// Processes the flow, returning true if the elements are sorted according to
     /// the given comparator, defaulting to std::less<>.
     ///
     /// Returns true for an empty flow.
@@ -279,57 +279,64 @@ public:
     ///
     /// It is equivalent to C++20 `std::views::transform`.
     ///
-    /// \param func A callable with signature compatible with `(item_t<F>) -> R`
-    /// \return A new flow whose item type is `R`, the return type of `func`
+    /// @param func A callable with signature compatible with `(item_t<F>) -> R`
+    /// @return A new flow whose item type is `R`, the return type of `func`
     template <typename Func>
     constexpr auto map(Func func) &&;
 
-    template <typename = Derived>
-    constexpr auto deref() &&
-    {
-        auto deref = [](auto&& val) -> decltype(auto) { return *val; };
-        static_assert(std::is_invocable_v<decltype(deref), item_t<Derived>>,
-            "Flow's item type is not dereferenceable with unary operator*");
-        static_assert(!std::is_void_v<decltype(*std::declval<item_t<Derived>>())>,
-            "Flow's item type dereferences to void");
-        return consume().map(deref);
-    }
-
+    /// Consumes the flow, returning a new flow which casts each item to type `T`,
+    /// using `static_cast`.
+    ///
+    /// Equivalent to:
+    ///
+    /// `map([](auto&& item) -> T { return static_cast<T>(forward(item)); })`
+    ///
+    /// @tparam T The type that items should be cast to. May not be `void`.
+    /// @return A new flow whose item type is `T`.
     template <typename T>
-    constexpr auto as() &&
-    {
-        return consume().map([](auto&& val) -> decltype(auto) {
-            return static_cast<T>(FLOW_FWD(val));
-        });
-    }
+    constexpr auto as() &&;
 
-    constexpr auto as_const() && -> decltype(auto)
-    {
-        if constexpr (std::is_lvalue_reference_v<item_t<Derived>>) {
-            return consume().template as<value_t<Derived> const&>();
-        } else {
-            return consume();
-        }
-    }
+    /// Consumes the flow, returning an adaptor which dereferences each item
+    /// using unary `operator*`.
+    ///
+    /// This is useful when you have a flow of a dereferenceable type (for
+    /// example a pointer, a `flow::maybe` or a `std::optional`), and want a
+    /// flow of (references to) the values they contain.
+    ///
+    /// Equivalent to:
+    ///
+    /// `map([](auto&& item) -> decltype(auto) { return *forward(item); })`
+    ///
+    /// @warning This function **does not** check whether the items are
+    /// non-null (or equivalent) before dereferencing. See `filter_deref()` for
+    /// a safer, checking version.
+    ///
+    /// @return An adaptor that dereferences each item of the original flow
+    constexpr auto deref() &&;
 
-    constexpr auto copy() && -> decltype(auto)
-    {
-        if constexpr (std::is_lvalue_reference_v<item_t<Derived>>) {
-            return consume().template as<value_t<Derived>>();
-        } else {
-            return consume();
-        }
-    }
+    /// Consumes the flow, returning an adaptor which copies every item.
+    ///
+    /// If the flow's item type is an lvalue reference type `T&`, this returns
+    /// a new flow whose item type is `remove_cvref<T>`, effectively copying each
+    /// item as it is dereferenced.
+    ///
+    /// If the flow's item type is not an lvalue reference, this adaptor has
+    /// no effect.
+    ///
+    /// @return A flow adaptor which copies each item of the original flow.
+    constexpr auto copy() && -> decltype(auto);
 
-    constexpr auto move() && -> decltype(auto)
-    {
-        if constexpr (std::is_lvalue_reference_v<item_t<Derived>>) {
-            return consume()
-                .template as<std::remove_reference_t<item_t<Derived>>&&>();
-        } else {
-            return consume();
-        }
-    }
+    /// Consumes the flow, returning an adaptor which casts each item to
+    /// an xvalue, allowing it to be moved from.
+    ///
+    /// If the flow's item type is an lvalue reference type `T&`, this returns
+    /// a new flow whose item type is `T&&`, allowing the item to be moved from.
+    ///
+    /// If the flow's item type is not an lvalue reference, this adaptor has
+    /// no effect.
+    ///
+    /// @return A flow adaptor which casts each item to an xvalue.
+    constexpr auto move() && -> decltype(auto);
 
     /// Consumes the flow, returning a new flow which yields the same items
     /// but calls @func at each call to `next()`, passing it a const reference

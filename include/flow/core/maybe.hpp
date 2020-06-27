@@ -190,6 +190,23 @@ struct maybe<T&&>
 
     constexpr T& operator*() const & { return *ptr_; }
     constexpr T&& operator*() const && { return std::move(*ptr_); }
+    constexpr T* operator->() const { return ptr_; }
+
+    constexpr T& value() const&
+    {
+        if (!ptr_) {
+            throw std::bad_optional_access{};
+        }
+        return *ptr_;
+    }
+
+    constexpr T&& value() const &&
+    {
+        if (!ptr_) {
+            throw std::bad_optional_access{};
+        }
+        return std::move(*ptr_);
+    }
 
     constexpr auto reset() { ptr_ = nullptr; }
     constexpr auto has_value() const -> bool { return ptr_ != nullptr; }

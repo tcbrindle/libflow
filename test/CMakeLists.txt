@@ -32,6 +32,7 @@ add_executable(test-libflow
     test_interleave.cpp
     test_is_sorted.cpp
     test_map.cpp
+    test_map_refinements.cpp
     test_minmax.cpp
     test_product.cpp
     test_slide.cpp
