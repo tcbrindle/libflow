@@ -1,17 +1,42 @@
 
-#include <flow/core/flow_base.hpp>
-
 #ifndef FLOW_OP_ZIP_WITH_HPP_INCLUDED
 #define FLOW_OP_ZIP_WITH_HPP_INCLUDED
+
+#include <flow/core/flow_base.hpp>
+#include <flow/source/from.hpp>
+
+#include <limits>
 
 namespace flow {
 
 namespace detail {
 
+// A zipped flow is sized if all its component flows are sized or infinite,
+// and at least one of them is non-infinite.
+// Fold expressions are cool.
+template <typename... Flows>
+inline constexpr bool is_sized_zip =
+    ((is_sized_flow<Flows> || is_infinite<Flows>) && ...) &&
+    !(is_infinite<Flows> && ...);
+
+template <typename F>
+constexpr auto size_or_infinity(const F& flow) -> dist_t
+{
+    if constexpr (is_infinite<F>) {
+        return std::numeric_limits<dist_t>::max();
+    } else if (is_sized_flow<F>) {
+        return flow.size();
+    }
+}
+
 template <typename Func, typename... Flows>
 struct zip_with_adaptor : flow_base<zip_with_adaptor<Func, Flows...>> {
 
+    static_assert(sizeof...(Flows) > 0);
+
     using item_type = std::invoke_result_t<Func&, item_t<Flows>...>;
+
+    static constexpr bool is_infinite = (is_infinite_flow<Flows> && ...);
 
     constexpr explicit zip_with_adaptor(Func func, Flows&&... flows)
         : func_(std::move(func)), flows_(FLOW_FWD(flows)...)
@@ -44,6 +69,17 @@ struct zip_with_adaptor : flow_base<zip_with_adaptor<Func, Flows...>> {
         }, flows_);
     }
 
+    template <bool B = is_sized_zip<Flows...>,
+              typename = std::enable_if_t<B>>
+    [[nodiscard]] constexpr auto size() const -> dist_t
+    {
+        return std::apply([](auto const&... args) {
+            // Clang doesn't like flow::of(...).min() here, not sure why
+            auto ilist = {size_or_infinity(args)...};
+            return *flow::min(ilist);
+        }, flows_);
+    }
+
 private:
     FLOW_NO_UNIQUE_ADDRESS Func func_;
     std::tuple<Flows...> flows_;
@@ -54,6 +90,8 @@ template <typename Func, typename F1, typename F2>
 struct zip_with_adaptor<Func, F1, F2> : flow_base<zip_with_adaptor<Func, F1, F2>>
 {
     using item_type = std::invoke_result_t<Func&, item_t<F1>, item_t<F2>>;
+
+    static constexpr bool is_infinite = is_infinite_flow<F1> && is_infinite_flow<F2>;
 
     constexpr zip_with_adaptor(Func func, F1&& f1, F2&& f2)
         : func_(std::move(func)),
@@ -76,6 +114,15 @@ struct zip_with_adaptor<Func, F1, F2> : flow_base<zip_with_adaptor<Func, F1, F2>
     constexpr auto subflow() & -> zip_with_adaptor<Func, subflow_t<S1>, subflow_t<S2>>
     {
         return {func_, f1_.subflow(), f2_.subflow()};
+    }
+
+    template <bool B = is_sized_zip<F1, F2>,
+              typename = std::enable_if_t<B>>
+    constexpr auto size() const -> dist_t
+    {
+        const auto s1 = size_or_infinity(f1_);
+        const auto s2 = size_or_infinity(f2_);
+        return s1 < s2 ? s1 : s2;
     }
 
 private:
