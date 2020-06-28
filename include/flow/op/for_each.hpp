@@ -19,7 +19,7 @@ constexpr auto flow_base<Derived>::for_each(Func func) -> Func
     static_assert(std::is_invocable_v<Func&, item_t<Derived>>,
                   "Incompatible callable passed to for_each()");
     consume().fold([&func](bool, auto&& val) {
-      (void) func(FLOW_FWD(val));
+      (void) invoke(func, FLOW_FWD(val));
       return true;
     }, true);
     return func;
