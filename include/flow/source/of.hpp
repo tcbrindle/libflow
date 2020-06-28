@@ -31,6 +31,11 @@ struct of : flow_base<of<T, N>> {
         return arr_.subflow();
     }
 
+    constexpr auto size() const -> dist_t
+    {
+        return arr_.size();
+    }
+
 private:
     detail::array_flow<T, N> arr_;
 };
