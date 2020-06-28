@@ -33,12 +33,20 @@ struct map_adaptor : flow_base<map_adaptor<Flow, Func>> {
 
     constexpr auto next() -> maybe<item_type>
     {
-        return flow_.next().map(func_);
+        if constexpr (is_infinite) {
+            return {invoke(func_, *flow_.next())};
+        } else {
+            return flow_.next().map(func_);
+        }
     }
 
     constexpr auto advance(dist_t dist) -> maybe<item_type>
     {
-        return flow_.advance(dist).map(func_);
+        if constexpr (is_infinite) {
+            return {invoke(func_, *flow_.advance(dist))};
+        } else {
+            return flow_.advance(dist).map(func_);
+        }
     }
 
     template <typename F = Flow>
