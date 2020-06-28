@@ -39,6 +39,8 @@ constexpr auto flow_base<Derived>::fold(Func func, Init init) -> Init
                   "Incompatible callable passed to fold()");
     static_assert(std::is_assignable_v<Init&, std::invoke_result_t<Func&, Init&&, item_t<Derived>>>,
                   "Accumulator of fold() is not assignable from the result of the function");
+    static_assert(!is_infinite_flow<Derived>,
+                  "Cannot perform a fold over an infinite flow");
 
     struct always {
         Init val;
