@@ -11,6 +11,8 @@ private:
     template <typename Func>
     struct generator : flow_base<generator<Func>> {
 
+        static constexpr bool is_infinite = true;
+
         constexpr explicit generator(Func func)
             : func_(std::move(func))
         {}
