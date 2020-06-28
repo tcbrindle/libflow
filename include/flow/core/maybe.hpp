@@ -24,10 +24,24 @@ struct maybe_move_assign_base : std::optional<T>
     constexpr maybe_move_assign_base& operator=(maybe_move_assign_base&& other)
         noexcept(noexcept(std::is_nothrow_move_constructible_v<T>))
     {
-        if (other) {
-            as_opt() = std::optional<T>{std::in_place, *std::move(other)};
+        // If T is move-assignable, we can construct a new optional<T> and use
+        // the optional(optional&&) move constructor, which is constexpr.
+        // If T is *not* move-assignable, this isn't an option, so we need
+        // to use emplace() to destroy the original value and replace it with
+        // a new, move-constructed one. This is, unfortuately, not constexpr,
+        // but at least it works...
+        if constexpr (std::is_move_assignable_v<T>) {
+            if (other) {
+                as_opt() = std::optional<T>{std::in_place, *std::move(other)};
+            } else {
+                as_opt() = std::optional<T>{std::nullopt};
+            }
         } else {
-            as_opt() = std::optional<T>{std::nullopt};
+            if (other) {
+                as_opt().emplace(*std::move(other));
+            } else {
+                as_opt().reset();
+            }
         }
         return *this;
     }
@@ -60,10 +74,19 @@ struct maybe_copy_assign_base : maybe_move_assign_base<T> {
     constexpr maybe_copy_assign_base& operator=(maybe_copy_assign_base const& other)
     {
         if (this != &other) {
-            if (other.as_opt()) {
-                this->as_opt() = std::optional<T>{std::in_place, *other.as_opt()};
+            if constexpr (std::is_copy_assignable_v<T>) {
+                if (other.as_opt()) {
+                    this->as_opt() =
+                        std::optional<T>{std::in_place, *other.as_opt()};
+                } else {
+                    this->as_opt() = std::optional<T>{std::nullopt};
+                }
             } else {
-                this->as_opt() = std::optional<T>{std::nullopt};
+                if (other.as_opt()) {
+                    this->as_opt().emplace(*other.as_opt());
+                } else {
+                    this->as_opt().reset();
+                }
             }
         }
         return *this;
