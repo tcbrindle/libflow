@@ -205,6 +205,11 @@ struct stl_ra_range_adaptor : flow_base<stl_ra_range_adaptor<R>> {
         }
     }
 
+    [[nodiscard]] constexpr auto size() const -> dist_t
+    {
+        return (std::end(rng_) - std::begin(rng_)) - idx_;
+    }
+
 private:
     template <typename>
     friend struct stl_ra_range_adaptor;

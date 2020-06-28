@@ -70,6 +70,29 @@ inline constexpr bool has_subflow<
 template <typename F>
 inline constexpr bool is_multipass_flow = is_flow<F> && detail::has_subflow<F>;
 
+namespace detail {
+
+template <typename, typename = void>
+inline constexpr bool has_size = false;
+
+template <typename T>
+inline constexpr bool has_size<
+    T, std::void_t<decltype(std::declval<T const&>().size())>> = true;
+
+template <typename, typename = void>
+inline constexpr bool is_infinite = false;
+
+template <typename T>
+inline constexpr bool is_infinite<T, std::enable_if_t<T::is_infinite>> = true;
+
+}
+
+template <typename F>
+inline constexpr bool is_sized_flow = is_flow<F> && detail::has_size<F>;
+
+template <typename F>
+inline constexpr bool is_infinite_flow = is_flow<F> && detail::is_infinite<F>;
+
 } // namespace flow
 
 #endif
