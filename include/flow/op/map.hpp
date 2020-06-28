@@ -22,6 +22,8 @@ namespace detail {
 template <typename Flow, typename Func>
 struct map_adaptor : flow_base<map_adaptor<Flow, Func>> {
 
+    static constexpr bool is_infinite = is_infinite_flow<Flow>;
+
     using item_type = std::invoke_result_t<Func&, item_t<Flow>>;
 
     constexpr map_adaptor(Flow&& flow, Func func)
@@ -43,6 +45,12 @@ struct map_adaptor : flow_base<map_adaptor<Flow, Func>> {
     constexpr auto subflow() & -> map_adaptor<subflow_t<F>, Func>
     {
         return map_adaptor<decltype(flow_.subflow()), Func>(flow_.subflow(), func_);
+    }
+
+    template <bool B = is_sized_flow<Flow>>
+    constexpr auto size() const -> std::enable_if_t<B, dist_t>
+    {
+        return flow_.size();
     }
 
 private:
