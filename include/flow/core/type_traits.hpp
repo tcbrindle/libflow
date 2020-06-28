@@ -52,7 +52,8 @@ inline constexpr bool has_next<T, std::enable_if_t<is_maybe<next_t<T>>>> = true;
 
 template <typename I, typename R = std::remove_reference_t<I>>
 inline constexpr bool is_flow
-    = std::is_base_of_v<flow_base<R>, R> &&
+    = std::is_move_constructible_v<R> &&
+      std::is_base_of_v<flow_base<R>, R> &&
       std::is_convertible_v<std::add_lvalue_reference_t<I>, flow_base<R>&> &&
       detail::has_next<I>;
 
