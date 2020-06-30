@@ -348,28 +348,13 @@ public:
     template <typename Func>
     constexpr auto inspect(Func func) &&;
 
+    /// Consumes the flow, returning a new flow containing only those items for
+    /// which `pred(item)` returned `true`.
+    ///
+    /// \param pred Predicate with signature compatible with `(const item_t<F>&) -> bool`
+    /// \return A new filter adaptor.
     template <typename Pred>
-    constexpr auto filter(Pred pred) &&
-    {
-        static_assert(std::is_invocable_v<Pred&, item_t<Derived>&>,
-            "Incompatible predicate passed to filter()");
-        constexpr auto is_boolish = [](auto&& p) { return p ? true : false; };
-        static_assert(std::is_invocable_v<decltype(is_boolish),
-            std::invoke_result_t<Pred&, item_t<Derived>&>>,
-            "filter predicate must return a type which is contextutally convertible to bool");
-
-        auto filter_fn = [self = consume(), pred = std::move(pred)] () mutable
-            -> maybe<item_t<Derived>>
-            {
-                while (auto o = self.next()) {
-                    if (invoke(pred, *o)) {
-                        return {std::move(o)};
-                    }
-                }
-                return {};
-            };
-        return consume().adapt(std::move(filter_fn));
-    }
+    constexpr auto filter(Pred pred) &&;
 
     template <typename Func>
     constexpr auto filter_map(Func func) &&
