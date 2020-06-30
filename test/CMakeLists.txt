@@ -12,6 +12,7 @@ add_executable(test-libflow
     test_async.cpp
     test_c_str.cpp
     test_empty.cpp
+    test_iota.cpp
     test_from.cpp
     test_from_istream.cpp
     test_from_istreambuf.cpp

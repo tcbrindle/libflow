@@ -38,7 +38,7 @@
 #include <flow/source/c_str.hpp>
 #include <flow/source/from.hpp>
 #include <flow/source/generate.hpp>
-#include <flow/source/ints.hpp>
+#include <flow/source/iota.hpp>
 #include <flow/source/istream.hpp>
 #include <flow/source/istreambuf.hpp>
 #include <flow/source/of.hpp>
