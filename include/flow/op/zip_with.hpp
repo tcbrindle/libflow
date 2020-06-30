@@ -62,10 +62,10 @@ struct zip_with_adaptor : flow_base<zip_with_adaptor<Func, Flows...>> {
 
     template <bool B = (is_multipass_flow<Flows> && ...),
               typename = std::enable_if_t<B>>
-    constexpr auto subflow() & -> zip_with_adaptor<Func, subflow_t<Flows>...>
+    constexpr auto subflow() & -> zip_with_adaptor<function_ref<Func>, subflow_t<Flows>...>
     {
         return std::apply([&func_ = func_](auto&... args) {
-            return zip_with_adaptor<Func, subflow_t<Flows>...>(func_, args.subflow()...);
+            return zip_with_adaptor<function_ref<Func>, subflow_t<Flows>...>(func_, args.subflow()...);
         }, flows_);
     }
 
@@ -111,7 +111,7 @@ struct zip_with_adaptor<Func, F1, F2> : flow_base<zip_with_adaptor<Func, F1, F2>
     }
 
     template <typename S1 = F1, typename S2 = F2>
-    constexpr auto subflow() & -> zip_with_adaptor<Func, subflow_t<S1>, subflow_t<S2>>
+    constexpr auto subflow() & -> zip_with_adaptor<function_ref<Func>, subflow_t<S1>, subflow_t<S2>>
     {
         return {func_, f1_.subflow(), f2_.subflow()};
     }

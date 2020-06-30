@@ -50,9 +50,9 @@ struct map_adaptor : flow_base<map_adaptor<Flow, Func>> {
     }
 
     template <typename F = Flow>
-    constexpr auto subflow() & -> map_adaptor<subflow_t<F>, Func>
+    constexpr auto subflow() & -> map_adaptor<subflow_t<F>, function_ref<Func>>
     {
-        return map_adaptor<decltype(flow_.subflow()), Func>(flow_.subflow(), func_);
+        return {flow_.subflow(), func_};
     }
 
     template <bool B = is_sized_flow<Flow>>

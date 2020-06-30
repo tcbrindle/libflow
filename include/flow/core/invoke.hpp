@@ -62,6 +62,30 @@ public:
 
 inline constexpr auto invoke = detail::invoke_fn{};
 
+namespace detail {
+
+// This is basically a cut-down, constexpr version of std::reference_wrapper
+template <typename F>
+struct function_ref {
+
+    constexpr function_ref(F& func) : f_(std::addressof(func)) {}
+
+    function_ref(F&&) = delete;
+
+    template <typename... Args>
+    constexpr auto operator()(Args&&... args) const
+        -> std::invoke_result_t<F&, Args...>
+    {
+        return invoke(*f_, FLOW_FWD(args)...);
+    }
+
+private:
+    F* f_;
+};
+
+}
+
+
 }
 
 #endif
