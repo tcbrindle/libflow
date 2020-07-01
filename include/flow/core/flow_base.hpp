@@ -395,19 +395,12 @@ public:
     template <typename Pred>
     constexpr auto take_while(Pred pred) &&;
 
-    template <typename = Derived>
-    constexpr auto step_by(dist_t stride) &&
-    {
-        auto fn = [self = consume(), stride = stride, first = true] () mutable
-        {
-            if (first) {
-                first = false;
-                return self.next();
-            }
-            return self.advance(stride);
-        };
-        return consume().adapt(std::move(fn));
-    }
+    /// Consume the flow, returning a new flow which starts at the same point and
+    /// then advances by `step` positions at each call to `next()`.
+    ///
+    /// @param step The step size, must be >= 1
+    /// @return A new stride adaptor
+    constexpr auto stride(dist_t step) &&;
 
     /// Consumes the flow, returning a new flow which yields fixed-size flows
     /// of `window_size`, stepping by `step_size` ever iteration.
@@ -415,19 +408,19 @@ public:
     /// If `partial_windows` is `false` (the default), then windows smaller than
     /// `window_size` at the end of the flow are ignored.
     ///
-    /// If `window_size` is 1, then this is like `step_by()`, except that
-    /// the inner item type is a flow (where `step_by()` flattens these).
+    /// If `window_size` is 1, then this is like `stride(step_size)`, except that
+    /// the inner item type is a flow (whereas `stride()` flattens these).
     ///
     /// If `window_size` is equal to `step_size`, then this is equivalent to
-    /// `chunk()`, except that undersized chunks at the end may be omitted
+    /// `chunk()`, except that the undersized chunk at the end may be omitted
     /// depending on the value of `partial_windows`.
     ///
-    /// \param window_size The size of the windows to generate. Must be >= 1
-    /// \param step_size The step size to use. Must be >= 1, default is 1
-    /// \param partial_windows Whether windows of size less than `window_size`
-    ///                        occuring at the end of the flow should be included.
+    /// @param window_size The size of the windows to generate. Must be >= 1
+    /// @param step_size The step size to use. Must be >= 1, default is 1
+    /// @param partial_windows Whether windows of size less than `window_size`
+    ///                        occurring at the end of the flow should be included.
     ///                        Default is `false`.
-    /// \return A new flow adaptor
+    /// @return A new slide adaptor
     constexpr auto slide(dist_t window_size,
                          dist_t step_size = 1,
                          bool partial_windows = false) &&;
@@ -531,7 +524,7 @@ public:
     template <typename D = Derived>
     constexpr auto split(value_t<D> delimiter) &&
     {
-        return consume().group_by(flow::pred::eq(std::move(delimiter))).step_by(2);
+        return consume().group_by(flow::pred::eq(std::move(delimiter))).stride(2);
     }
 
     /// Consumes the flow, returning a new flow where each item is a flow

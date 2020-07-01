@@ -30,6 +30,7 @@
 #include <flow/op/minmax.hpp>
 #include <flow/op/product.hpp>
 #include <flow/op/slide.hpp>
+#include <flow/op/stride.hpp>
 #include <flow/op/sum.hpp>
 #include <flow/op/take.hpp>
 #include <flow/op/take_while.hpp>

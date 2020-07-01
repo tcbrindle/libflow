@@ -99,7 +99,7 @@ constexpr bool test_slide_no_partial(Ints ints)
 
     // Test window_size == 1, step_size == 2
     // Expects [ [1], [3], [5] ]
-    // This is equivalent to an "unflattened" step_by
+    // This is equivalent to an "unflattened" stride
     {
         auto f = flow::from(ints).slide(1, 2);
 
@@ -114,8 +114,8 @@ constexpr bool test_slide_no_partial(Ints ints)
         }
 
         // Make sure a "flattened" version of the above is really the same as
-        // doing step_by
-        if (not flow::from(ints).slide(1, 2).flatten().equal(flow::from(ints).step_by(2))) {
+        // doing stride
+        if (not flow::from(ints).slide(1, 2).flatten().equal(flow::from(ints).stride(2))) {
             return false;
         }
     }
@@ -264,7 +264,7 @@ constexpr bool test_slide_partial(const Ints ints)
 
         // Make sure a "flattened" version of the above is really the same as
         // doing step_by
-        if (not flow::from(ints).slide(1, 2, true).flatten().equal(flow::from(ints).step_by(2))) {
+        if (not flow::from(ints).slide(1, 2, true).flatten().equal(flow::from(ints).stride(2))) {
             return false;
         }
     }
