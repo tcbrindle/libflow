@@ -362,27 +362,16 @@ public:
     /// @return A new drop adaptor
     constexpr auto drop(dist_t count) &&;
 
+    /// Consumes the flow, returning a new flow which skips items until `pred`
+    /// returns `false`.
+    ///
+    /// One `pred` has returned false, `drop_while` has done its job and the
+    /// rest of the items will be returned as normal.
+    ///
+    /// @param pred A predicate with signature compatible with `(const item_t<F>&) -> bool)`.
+    /// @return A new drop_while adaptor.
     template <typename Pred>
-    constexpr auto drop_while(Pred pred) &&
-    {
-        auto fn = [self = consume(),
-                   pred = std::move(pred),
-                   done = false] () mutable -> maybe<item_t<Derived>>
-        {
-            while (auto m = self.next()) {
-                if (!done) {
-                    if (invoke(pred, *m)) {
-                        continue;
-                    } else {
-                        done = true;
-                    }
-                }
-                return m;
-            }
-            return {};
-        };
-        return consume().adapt(std::move(fn));
-    }
+    constexpr auto drop_while(Pred pred) &&;
 
     struct take_adaptor : flow_base<take_adaptor>
     {

@@ -56,7 +56,7 @@ private:
 
 }
 
-constexpr auto drop = [](auto&& flowable, dist_t count)
+inline constexpr auto drop = [](auto&& flowable, dist_t count)
 {
     static_assert(is_flowable<decltype(flowable)>,
                   "Argument to flow::drop() must be a Flowable type");
