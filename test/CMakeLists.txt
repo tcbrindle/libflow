@@ -41,6 +41,7 @@ add_executable(test-libflow
     test_product.cpp
     test_slide.cpp
     test_sum.cpp
+    test_take.cpp
     test_to.cpp
     test_zip_with.cpp
 )

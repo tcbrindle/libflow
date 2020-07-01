@@ -31,6 +31,7 @@
 #include <flow/op/product.hpp>
 #include <flow/op/slide.hpp>
 #include <flow/op/sum.hpp>
+#include <flow/op/take.hpp>
 #include <flow/op/to_range.hpp>
 #include <flow/op/try_fold.hpp>
 #include <flow/op/try_for_each.hpp>

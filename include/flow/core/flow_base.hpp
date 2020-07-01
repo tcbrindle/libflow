@@ -373,31 +373,16 @@ public:
     template <typename Pred>
     constexpr auto drop_while(Pred pred) &&;
 
-    struct take_adaptor : flow_base<take_adaptor>
-    {
-        constexpr take_adaptor(Derived&& derived, dist_t count)
-            : derived_(std::move(derived)), count_(count)
-        {}
-
-        constexpr auto next() -> maybe<item_t<Derived>>
-        {
-            if (count_ > 0) {
-                --count_;
-                return derived_.next();
-            }
-            return {};
-        }
-
-    private:
-        Derived derived_;
-        dist_t count_;
-    };
-
-    template <typename = Derived>
-    constexpr auto take(dist_t count) &&
-    {
-        return take_adaptor{consume(), count};
-    }
+    /// Consumes the flow, returning a new flow which yields at most `count` items.
+    ///
+    /// The returned flow may return fewer than `count` items if the underlying
+    /// flow contained fewer items.
+    ///
+    /// The returned flow is sized if the original flow is itself sized or infinite.
+    ///
+    /// @param count Maximum number of items this flow should return.
+    /// @return A new take adaptor
+    constexpr auto take(dist_t count) &&;
 
     template <typename Pred>
     constexpr auto take_while(Pred pred) &&
