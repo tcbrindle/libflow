@@ -384,24 +384,16 @@ public:
     /// @return A new take adaptor
     constexpr auto take(dist_t count) &&;
 
+    /// Consumes the flow, returning a new flow which takes items until the
+    /// predicate returns `false`
+    ///
+    /// One `pred` has returned `false`, `take_while` has done its job and
+    /// will not yield any more items.
+    ///
+    /// @param pred Callable with signature compatible with `(const value_t<Flow>&) -> bool`.
+    /// @return A new take_while adaptor
     template <typename Pred>
-    constexpr auto take_while(Pred pred) &&
-    {
-        auto fn = [self = consume(),
-                   pred = std::move(pred),
-                   done = false] () mutable -> maybe<item_t<Derived>> {
-            if (!done) {
-                auto m = self.next();
-                if (invoke(pred, *m)) {
-                    return m;
-                } else {
-                    done = true;
-                }
-            }
-            return {};
-        };
-        return consume().adapt(std::move(fn));
-    }
+    constexpr auto take_while(Pred pred) &&;
 
     template <typename = Derived>
     constexpr auto step_by(dist_t stride) &&
