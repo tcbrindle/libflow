@@ -356,19 +356,6 @@ public:
     template <typename Pred>
     constexpr auto filter(Pred pred) &&;
 
-    template <typename Func>
-    constexpr auto filter_map(Func func) &&
-    {
-        static_assert(std::is_invocable_v<Func&, item_t<Derived>>);
-        auto to_bool = [](auto&& a) { return static_cast<bool>(a); };
-        using ret_t = std::invoke_result_t<Func&, item_t<Derived>>;
-        static_assert(std::is_invocable_v<decltype(to_bool), ret_t&>);
-
-        return consume().map(std::move(func)).filter([] (auto&& val) {
-            return val ? true : false;
-        }).deref();
-    }
-
     template <typename = Derived>
     constexpr auto drop(dist_t count) &&
     {
