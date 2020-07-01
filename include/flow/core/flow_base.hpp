@@ -351,23 +351,16 @@ public:
     /// Consumes the flow, returning a new flow containing only those items for
     /// which `pred(item)` returned `true`.
     ///
-    /// \param pred Predicate with signature compatible with `(const item_t<F>&) -> bool`
-    /// \return A new filter adaptor.
+    /// @param pred Predicate with signature compatible with `(const item_t<F>&) -> bool`
+    /// @return A new filter adaptor.
     template <typename Pred>
     constexpr auto filter(Pred pred) &&;
 
-    template <typename = Derived>
-    constexpr auto drop(dist_t count) &&
-    {
-        auto drop_fn = [self = consume(), count = count] () mutable {
-            if (count > 0) {
-                self.advance(count);
-                count = 0;
-            }
-            return self.next();
-        };
-        return consume().adapt(std::move(drop_fn));
-    }
+    /// Consumes the flow, returning a new flow which skips the first `count` items.
+    ///
+    /// @param count The number of items to skip
+    /// @return A new drop adaptor
+    constexpr auto drop(dist_t count) &&;
 
     template <typename Pred>
     constexpr auto drop_while(Pred pred) &&

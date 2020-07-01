@@ -13,6 +13,7 @@
 #include <flow/op/contains.hpp>
 #include <flow/op/count.hpp>
 #include <flow/op/count_if.hpp>
+#include <flow/op/drop.hpp>
 #include <flow/op/filter.hpp>
 #include <flow/op/find.hpp>
 #include <flow/op/flatten.hpp>

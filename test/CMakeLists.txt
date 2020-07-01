@@ -25,6 +25,7 @@ add_executable(test-libflow
     test_contains.cpp
     test_count.cpp
     test_count_if.cpp
+    test_drop.cpp
     test_filter.cpp
     test_find.cpp
     test_flatten.cpp
