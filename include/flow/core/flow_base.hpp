@@ -2,7 +2,7 @@
 #ifndef FLOW_CORE_FLOW_BASE_HPP_INCLUDED
 #define FLOW_CORE_FLOW_BASE_HPP_INCLUDED
 
-#include <flow/core/invoke.hpp>
+#include <flow/core/functional.hpp>
 #include <flow/core/maybe.hpp>
 #include <flow/core/predicates.hpp>
 #include <flow/core/type_traits.hpp>

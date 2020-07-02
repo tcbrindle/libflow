@@ -2,7 +2,7 @@
 #ifndef FLOW_CORE_MAYBE_HPP_INCLUDED
 #define FLOW_CORE_MAYBE_HPP_INCLUDED
 
-#include <flow/core/invoke.hpp>
+#include <flow/core/functional.hpp>
 
 #include <optional>
 

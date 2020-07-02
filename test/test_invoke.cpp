@@ -9,9 +9,9 @@
 //
 // Project home: https://github.com/caseycarter/cmcstl2
 //
-#include <flow/core/invoke.hpp>
-#include <memory>
 #include "catch.hpp"
+#include <flow/core/functional.hpp>
+#include <memory>
 
 constexpr struct {
 	template <typename T>

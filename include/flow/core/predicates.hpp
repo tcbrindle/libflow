@@ -2,10 +2,9 @@
 #ifndef FLOW_CORE_COMPARATORS_HPP_INCLUDED
 #define FLOW_CORE_COMPARATORS_HPP_INCLUDED
 
+#include <flow/core/functional.hpp>
 #include <flow/core/macros.hpp>
-#include <flow/core/invoke.hpp>
 
-#include <functional>
 #include <type_traits>
 
 namespace flow::pred {
