@@ -425,32 +425,12 @@ public:
                          dist_t step_size = 1,
                          bool partial_windows = false) &&;
 
-    struct cycle_adaptor : flow_base<cycle_adaptor>
-    {
-        constexpr cycle_adaptor(Derived&& d)
-            : init_(std::move(d))
-        {}
-
-        constexpr auto next() -> next_t<Derived>
-        {
-            while (true) {
-                if (auto m = cur_.next()) {
-                    return m;
-                }
-                cur_ = init_;
-            }
-        }
-
-    private:
-        Derived init_;
-        Derived cur_ = init_;
-    };
-
-    template <typename = Derived>
-    constexpr auto cycle() &&
-    {
-        return cycle_adaptor{consume()};
-    }
+    /// Consumes the flow, returning a new flow which endlessly repeats its items.
+    ///
+    /// @note Requires that the flow is copy-constructable and copy-assignable.
+    ///
+    /// \return A new cycle adaptor
+    constexpr auto cycle() &&;
 
 private:
     template <typename Other>
