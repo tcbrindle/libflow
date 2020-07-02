@@ -120,9 +120,7 @@ struct zip_with_adaptor<Func, F1, F2> : flow_base<zip_with_adaptor<Func, F1, F2>
               typename = std::enable_if_t<B>>
     constexpr auto size() const -> dist_t
     {
-        const auto s1 = size_or_infinity(f1_);
-        const auto s2 = size_or_infinity(f2_);
-        return s1 < s2 ? s1 : s2;
+        return min(size_or_infinity(f1_), size_or_infinity(f2_));
     }
 
 private:

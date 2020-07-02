@@ -41,8 +41,7 @@ struct take_adaptor : flow_base<take_adaptor<Flow>> {
         if constexpr (is_infinite_flow<Flow>) {
             return count_;
         } else {
-            auto sz = flow_.size();
-            return sz < count_ ? sz : count_;
+            return min(flow_.size(), count_);
         }
     }
 

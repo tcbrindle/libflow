@@ -130,6 +130,28 @@ struct greater_equal {
     }
 };
 
+namespace detail {
+
+// Reimplementations of std::min and std::max so we don't need to drag in <algorithm>
+inline constexpr struct min_fn {
+    template <typename T>
+    constexpr auto operator()(const T& lhs, const T& rhs) const -> decltype(auto)
+    {
+        return lhs < rhs ? lhs : rhs;
+    }
+
+} min;
+
+inline constexpr struct max_fn {
+    template <typename T>
+    constexpr auto operator()(const T& lhs, const T& rhs) const -> const T&
+    {
+        return rhs < lhs ? lhs : rhs;
+    }
+} max;
+
+}
+
 }
 
 #endif

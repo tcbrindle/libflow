@@ -39,8 +39,7 @@ struct drop_adaptor : flow_base<drop_adaptor<Flow>>
     template <typename F = Flow>
     constexpr auto size() const -> std::enable_if_t<is_sized_flow<F>, dist_t>
     {
-        auto sz = flow_.size() - count_;
-        return sz > 0 ? sz : 0;
+        return max(flow_.size() - count_, dist_t{0});
     }
 
     template <typename F = Flow>
