@@ -4,7 +4,8 @@
 
 #include <flow/core/macros.hpp>
 
-#include <functional> // for reference_wrapper :-(
+#include <memory>       // for std::addressof
+#include <type_traits>
 
 namespace flow {
 
@@ -75,6 +76,59 @@ private:
 
 }
 
+struct equal_to {
+    template <typename T, typename U>
+    constexpr auto operator()(T&& t, U&& u) const
+        -> decltype(static_cast<bool>(FLOW_FWD(t) == FLOW_FWD(u)))
+    {
+        return static_cast<bool>(FLOW_FWD(t) == FLOW_FWD(u));
+    }
+};
+
+struct not_equal_to {
+    template <typename T, typename U>
+    constexpr auto operator()(T&& t, U&& u) const
+        -> decltype(!equal_to{}(FLOW_FWD(t), FLOW_FWD(u)))
+    {
+        return !equal_to{}(FLOW_FWD(t), FLOW_FWD(u));
+    }
+};
+
+struct less {
+    template <typename T, typename U>
+    constexpr auto operator()(T&& t, U&& u) const
+        -> decltype(static_cast<bool>(FLOW_FWD(t) < FLOW_FWD(u)))
+    {
+        return static_cast<bool>(FLOW_FWD(t) < FLOW_FWD(u));
+    }
+};
+
+struct greater {
+    template <typename T, typename U>
+    constexpr auto operator()(T&& t, U&& u) const
+        -> decltype(less{}(FLOW_FWD(u), FLOW_FWD(t)))
+    {
+        return less{}(FLOW_FWD(u), FLOW_FWD(t));
+    }
+};
+
+struct less_equal {
+    template <typename T, typename U>
+    constexpr auto operator()(T&& t, U&& u) const
+        -> decltype(!less{}(FLOW_FWD(u), FLOW_FWD(t)))
+    {
+        return !less{}(FLOW_FWD(u), FLOW_FWD(t));
+    }
+};
+
+struct greater_equal {
+    template <typename T, typename U>
+    constexpr auto operator()(T&& t, U&& u) const
+        -> decltype(!less{}(FLOW_FWD(t), FLOW_FWD(u)))
+    {
+        return !less{}(FLOW_FWD(t), FLOW_FWD(u));
+    }
+};
 
 }
 

@@ -86,12 +86,12 @@ inline constexpr auto neither = [](auto&& p1, auto&& nor) {
     return not_(either(FLOW_FWD(p1), FLOW_FWD(nor)));
 };
 
-inline constexpr auto eq = detail::cmp<std::equal_to<>>;
-inline constexpr auto neq = detail::cmp<std::not_equal_to<>>;
-inline constexpr auto lt = detail::cmp<std::less<>>;
-inline constexpr auto gt = detail::cmp<std::greater<>>;
-inline constexpr auto leq = detail::cmp<std::less_equal<>>;
-inline constexpr auto geq = detail::cmp<std::greater_equal<>>;
+inline constexpr auto eq = detail::cmp<flow::equal_to>;
+inline constexpr auto neq = detail::cmp<flow::not_equal_to>;
+inline constexpr auto lt = detail::cmp<flow::less>;
+inline constexpr auto gt = detail::cmp<flow::greater>;
+inline constexpr auto leq = detail::cmp<flow::less_equal>;
+inline constexpr auto geq = detail::cmp<flow::greater_equal>;
 
 /// Returns true if the given value is greater than a zero of the same type.
 inline constexpr auto positive = detail::predicate{[](auto const& val) -> bool {
@@ -113,7 +113,7 @@ inline constexpr auto nonzero = detail::predicate{[](auto const& val) -> bool {
 inline constexpr auto in = [](auto const&... vals) {
     static_assert(sizeof...(vals) > 0);
     return detail::predicate{[vals...](auto const& arg) -> decltype(auto) {
-        return (std::equal_to<>{}(arg, vals) || ...);
+        return (equal_to{}(arg, vals) || ...);
     }};
 };
 

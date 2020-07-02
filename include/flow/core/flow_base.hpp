@@ -159,7 +159,7 @@ public:
     /// @param cmp The comparator to be used, with a signature compatible with
     ///      `(T, item_t<Flow>) -> bool` (default is `std::equal<>`)
     /// @returns The number of items for which `cmp(value, item)` returned `true`
-    template <typename T, typename Cmp = std::equal_to<>>
+    template <typename T, typename Cmp = equal_to>
     constexpr auto count(const T& value, Cmp cmp = {}) -> dist_t;
 
     /// Processes the flow until it finds an item that compares equal to
@@ -177,7 +177,7 @@ public:
     /// @returns A flow::maybe containing the first item for which `cmp(value, item)`
     ///          returned `true`, or an empty `maybe` if the flow was exhausted without
     ///          finding such an item.
-    template <typename T, typename Cmp = std::equal_to<>>
+    template <typename T, typename Cmp = equal_to>
     constexpr auto find(const T& value, Cmp cmp = {});
 
     /// Returns `true` if the flow contains an item which compares equal to
@@ -195,7 +195,7 @@ public:
     ///           compatible with `(T, item_t<Flow>) -> bool` (default: `std::equal<>`)
     /// @returns `true` iff the flow contained an item for which `cmp(value, item)`
     ///          returned `true`.
-    template <typename T, typename Cmp = std::equal_to<>>
+    template <typename T, typename Cmp = equal_to>
     constexpr auto contains(const T& value, Cmp cmp = {}) -> bool;
 
     /// Exhausts the flow, returning the sum of items using `operator+`
@@ -214,14 +214,14 @@ public:
     ///
     /// If several items are equally minimal, returns the first. If the flow
     /// is empty, returns an empty `maybe`.
-    template <typename Cmp = std::less<>>
+    template <typename Cmp = less>
     constexpr auto min(Cmp cmp = Cmp{});
 
     /// Exhausts the flow, returning the largest item according to `cmp`
     ///
     /// If several items are equal maximal, returns the last. If the flow
     /// is empty, returns an empty `maybe`.
-    template <typename Cmp = std::less<>>
+    template <typename Cmp = less>
     constexpr auto max(Cmp cmp = Cmp{});
 
     /// Exhausts the flow, returning both the minimum and maximum values
@@ -230,7 +230,7 @@ public:
     /// If several items are equal minimal, returns the first. If several items
     /// are equally maximal, returns the last. If the flow is empty, returns
     /// an empty `maybe`.
-    template <typename Cmp = std::less<>>
+    template <typename Cmp = less>
     constexpr auto minmax(Cmp cmp = Cmp{});
 
     /// Processes the flow, returning true if all the items satisfy the predicate.
@@ -264,7 +264,7 @@ public:
     ///
     /// Unlike most operations, this function is short-circuiting. It will stop
     /// processing the flow when it finds an item which is not in sorted order.
-    template <typename Cmp = std::less<>>
+    template <typename Cmp = less>
     constexpr auto is_sorted(Cmp cmp = Cmp{}) -> bool;
 
     template <typename NextFn>
