@@ -429,45 +429,18 @@ public:
     ///
     /// @note Requires that the flow is copy-constructable and copy-assignable.
     ///
-    /// \return A new cycle adaptor
+    /// @return A new cycle adaptor
     constexpr auto cycle() &&;
 
-private:
-    template <typename Other>
-    struct chain_adaptor : flow_base<chain_adaptor<Other>> {
-
-        constexpr chain_adaptor(Derived&& self, Other&& other)
-            : self_(std::move(self)),
-              other_(std::move(other))
-        {}
-
-        constexpr auto next() -> next_t<Derived>
-        {
-            if (first_) {
-                if (auto m = self_.next()) {
-                    return m;
-                }
-                first_ = false;
-            }
-
-            return other_.next();
-        }
-
-    private:
-        Derived self_;
-        Other other_;
-        bool first_ = true;
-   };
-
-public:
-    template <typename Flow>
-    constexpr auto chain(Flow other) &&
-    {
-        static_assert(std::is_same_v<item_t<Derived>, item_t<Flow>>,
-            "Flows used with chain() must have the exact same item type");
-
-        return chain_adaptor<Flow>(consume(), std::move(other));
-    }
+    /// Takes a set of flows and creates a new flow which iterates over each of
+    /// them, one after the other.
+    ///
+    /// @note All flows passed to `chain` must have the exact same item type
+    ///
+    /// @param flowables A list of Flowable objects to chain
+    /// @return A new chain adaptor
+    template <typename... Flowables>
+    constexpr auto chain(Flowables&&... flowables) &&;
 
     template <typename Flow>
     constexpr auto interleave(Flow with) &&;

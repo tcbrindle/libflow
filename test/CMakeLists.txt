@@ -20,6 +20,7 @@ add_executable(test-libflow
 
     # Operations
     test_all_any_none.cpp
+    test_chain.cpp
     test_chunk.cpp
     test_collect.cpp
     test_contains.cpp
