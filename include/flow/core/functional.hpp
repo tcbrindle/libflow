@@ -10,12 +10,6 @@ namespace flow {
 
 namespace detail {
 
-template <typename>
-inline constexpr bool is_reference_wrapper = false;
-
-template <typename R>
-inline constexpr bool is_reference_wrapper<std::reference_wrapper<R>> = true;
-
 struct invoke_fn {
 private:
     template <typename T, typename Type, typename T1, typename... Args>
@@ -24,8 +18,6 @@ private:
         if constexpr (std::is_member_function_pointer_v<decltype(f)>) {
             if constexpr (std::is_base_of_v<T, std::decay_t<T1>>) {
                 return (FLOW_FWD(t1).*f)(FLOW_FWD(args)...);
-            } else if constexpr (is_reference_wrapper<std::decay_t<T1>>) {
-                return (t1.get().*f)(FLOW_FWD(args)...);
             } else {
                 return ((*FLOW_FWD(t1)).*f)(FLOW_FWD(args)...);
             }
@@ -34,8 +26,6 @@ private:
             static_assert(sizeof...(args) == 0);
             if constexpr (std::is_base_of_v<T, std::decay_t<T1>>) {
                 return FLOW_FWD(t1).*f;
-            } else if constexpr (is_reference_wrapper<std::decay_t<T1>>) {
-                return t1.get().*f;
             } else {
                 return (*FLOW_FWD(t1)).*f;
             }
