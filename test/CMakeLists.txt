@@ -1,6 +1,8 @@
 
+add_library(catch-main catch_main.cpp)
+target_compile_features(catch-main PUBLIC cxx_std_17)
+
 add_executable(test-libflow
-    catch_main.cpp
     test_invoke.cpp
     test_maybe.cpp
     test_predicates.cpp
@@ -49,7 +51,11 @@ add_executable(test-libflow
     test_to.cpp
     test_zip_with.cpp
 )
-target_link_libraries(test-libflow flow)
+target_link_libraries(test-libflow flow catch-main)
+
+if (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.16.0")
+    target_precompile_headers(test-libflow PRIVATE "catch.hpp")
+endif()
 
 if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(test-libflow PRIVATE -Wall -Wextra -pedantic
