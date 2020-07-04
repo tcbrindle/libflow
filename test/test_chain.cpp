@@ -76,6 +76,38 @@ constexpr bool test_chain3()
         static_assert(not flow::is_multipass_flow<decltype(f)>);
     }
 
+    // Empty flows are ignored
+    {
+        auto f = flow::chain(arr1, flow::empty<int&>(), flow::empty<int&>{}, arr2,
+                             flow::empty<int&>(), arr3, flow::empty<int&>{});
+
+        if (f.size() != 9) {
+            return false;
+        }
+
+        if (f.count() != 9) {
+            return false;
+        }
+    }
+
+    // Overridden try_fold() behaves as expected
+    {
+        if(flow::chain(arr1, arr2, arr3).sum() != 45) {
+            return false;
+        }
+
+        auto f = flow::chain(arr1, arr2, arr3);
+
+        // Make sure we break correctly
+        if (f.all(flow::pred::lt(7))) {
+            return false;
+        }
+
+        if (f.next().value() != 8) {
+            return false;
+        }
+    }
+
     return true;
 }
 static_assert(test_chain3());
@@ -139,6 +171,25 @@ constexpr bool test_chain2()
 
         static_assert(flow::is_flow<decltype(f)>);
         static_assert(not flow::is_multipass_flow<decltype(f)>);
+    }
+
+    // Overridden try_fold() behaves as expected
+    {
+        if(flow::chain(arr1, arr2).sum() != 45) {
+            return false;
+        }
+
+        auto f = flow::chain(arr1, arr2);
+
+
+        // Make sure we break correctly
+        if (f.all(flow::pred::lt(7))) {
+            return false;
+        }
+
+        if (f.next().value() != 8) {
+            return false;
+        }
     }
 
     return true;

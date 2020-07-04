@@ -41,6 +41,24 @@ private:
         return get_next_impl<0>(idx_seq{});
     }
 
+    template <std::size_t N, typename Func, typename Init, std::size_t... I>
+    constexpr auto try_fold_impl(Func& func, Init init, idx_seq)
+    {
+        if constexpr (N < sizeof...(Flows)) {
+            if (N == idx_) {
+                init = std::get<N>(flows_).try_fold(func, std::move(init));
+                if (!init) {
+                    return init;
+                } else {
+                    ++idx_;
+                }
+            }
+            return try_fold_impl<N+1>(func, std::move(init), idx_seq{});
+        } else {
+            return init;
+        }
+    }
+
 public:
     static constexpr bool is_infinite = (is_infinite_flow<Flows> || ...);
 
@@ -77,6 +95,12 @@ public:
         }, flows_);
         s.idx_ = idx_;
         return s;
+    }
+
+    template <typename Func, typename Init>
+    constexpr auto try_fold(Func func, Init init) -> Init
+    {
+        return try_fold_impl<0>(func, std::move(init), idx_seq{});
     }
 };
 
@@ -115,6 +139,19 @@ struct chain_adaptor<Flow1, Flow2> : flow_base<chain_adaptor<Flow1, Flow2>> {
         auto s = chain_adaptor<subflow_t<F1>, subflow_t<F2>>{flow1_.subflow(), flow2_.subflow()};
         s.first_ = first_;
         return s;
+    }
+
+    template <typename Func, typename Init>
+    constexpr auto try_fold(Func func, Init init) -> Init
+    {
+        if (first_) {
+            init = flow1_.try_fold(function_ref{func}, std::move(init));
+            if (!init) {
+                return init;
+            }
+            first_ = false;
+        }
+        return flow2_.try_fold(std::move(func), std::move(init));
     }
 
 private:
