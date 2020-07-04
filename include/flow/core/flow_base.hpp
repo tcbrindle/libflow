@@ -455,6 +455,11 @@ public:
     template <typename Flowable>
     constexpr auto interleave(Flowable&& with) &&;
 
+    /// Returns an adaptor which flattens a nested flow of Flowable objects.
+    ///
+    /// This is equivalent to `std::ranges::join`
+    ///
+    /// \return
     constexpr auto flatten() &&;
 
     template <typename Func>

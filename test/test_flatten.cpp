@@ -76,3 +76,22 @@ TEST_CASE("flatten(), then min", "[flow.flatten]")
     REQUIRE(f().min().value() == 1);
     REQUIRE(f().max().value() == 9);
 }
+
+TEST_CASE("flatten() subflows", "[flow.flatten]")
+{
+    auto flow_of_vecs = flow::of{
+        std::vector{1, 2, 3},
+        std::vector{4, 5, 6, 7},
+        std::vector{8, 9}
+    };
+
+    auto f = flow::flatten(std::move(flow_of_vecs));
+
+    REQUIRE(f.subflow().next().value() == 1);
+
+    // Advance into the second flow
+    (void) f.advance(4);
+
+    REQUIRE(f.subflow().next().value() == 5);
+    REQUIRE(f.next().value() == 5);
+}
