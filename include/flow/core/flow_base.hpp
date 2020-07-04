@@ -442,8 +442,18 @@ public:
     template <typename... Flowables>
     constexpr auto chain(Flowables&&... flowables) &&;
 
-    template <typename Flow>
-    constexpr auto interleave(Flow with) &&;
+    /// Returns an adaptor which alternates an item from the first flow, followed
+    /// by an item from the second flow, followed by the the next item from
+    /// the first flow, and so on.
+    ///
+    /// The adaptor is exhausted when either of the two flows is exhausted.
+    ///
+    /// @note Both flows must have the exact same item type
+    ///
+    /// @param with A Flowable object with which to interleave
+    /// @return A new interleave adaptor
+    template <typename Flowable>
+    constexpr auto interleave(Flowable&& with) &&;
 
     constexpr auto flatten() &&;
 

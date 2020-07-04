@@ -25,8 +25,7 @@ constexpr bool test_interleave()
         auto evens = flow::ints().filter(is_even);
         auto odds = flow::ints().filter(flow::pred::not_(is_even));
 
-        bool b = std::move(evens)
-            .interleave(odds)
+        bool b = flow::interleave(evens, odds)
             .take(10)
             .equal(flow::ints().take(10));
         if (!b) {

@@ -31,25 +31,43 @@ struct interleave_adaptor : flow_base<interleave_adaptor<Flow1, Flow2>> {
         return i;
     }
 
+    template <typename F1 = Flow1, typename F2 = Flow2,
+              typename = std::enable_if_t<is_sized_flow<F1> && is_sized_flow<F2>>>
+    [[nodiscard]] constexpr auto size() const -> dist_t
+    {
+        return flow1_.size() + flow2_.size();
+    }
+
 private:
     template <typename, typename>
     friend struct interleave_adaptor;
 
     Flow1 flow1_;
     Flow2 flow2_;
+    bool first_done_ = false;
+    bool second_done_ = false;
     bool first_ = true;
 };
 
 }
 
-template <typename Derived>
-template <typename Flow>
-constexpr auto flow_base<Derived>::interleave(Flow with) &&
+inline constexpr auto interleave = [](auto&& flowable1, auto&& flowable2)
 {
-    static_assert(is_flow<Flow>, "Argument to interleave() must be a Flow!");
-    static_assert(std::is_same_v<item_t<Derived>, item_t<Flow>>,
+    static_assert(is_flowable<decltype(flowable1)>,
+                  "Argument to flow::interleave() must be a Flowable type");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable1))).interleave(FLOW_FWD(flowable2));
+};
+
+template <typename D>
+template <typename Flowable>
+constexpr auto flow_base<D>::interleave(Flowable&& with) &&
+{
+    static_assert(is_flowable<Flowable>,
+        "Argument to interleave() must be a Flowable type");
+    static_assert(std::is_same_v<item_t<D>, flow_item_t<Flowable>>,
         "Flows used with interleave() must have the exact same item type");
-    return detail::interleave_adaptor<Derived, Flow>(consume(), std::move(with));
+    return detail::interleave_adaptor<D, std::decay_t<flow_t<Flowable>>>(
+        consume(), FLOW_COPY(flow::from(FLOW_FWD(with))));
 }
 
 }
