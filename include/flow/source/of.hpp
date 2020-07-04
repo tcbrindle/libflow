@@ -43,14 +43,6 @@ private:
 template <typename T, typename... U>
 of(T, U...) -> of<T, 1 + sizeof...(U)>;
 
-template <typename T>
-struct empty : flow_base<empty<T>> {
-
-    explicit constexpr empty() = default;
-
-    constexpr auto next() -> maybe<T> { return {}; }
-};
-
 }
 
 #endif
