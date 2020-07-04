@@ -20,7 +20,6 @@
 #include <flow/op/filter.hpp>
 #include <flow/op/find.hpp>
 #include <flow/op/flatten.hpp>
-#include <flow/op/flat_map.hpp>
 #include <flow/op/fold.hpp>
 #include <flow/op/for_each.hpp>
 #include <flow/op/group_by.hpp>

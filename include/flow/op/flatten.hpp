@@ -65,12 +65,30 @@ inline constexpr auto flatten = [](auto&& flowable)
     return FLOW_COPY(flow::from(FLOW_FWD(flowable))).flatten();
 };
 
+inline constexpr auto flat_map = [](auto&& flowable, auto func)
+{
+  static_assert(is_flowable<decltype(flowable)>,
+                "Argument to flow::flat_map must be a Flowable type");
+  return FLOW_COPY(flow::from(FLOW_FWD(flowable))).flat_map(std::move(func));
+};
+
 template <typename Derived>
 constexpr auto flow_base<Derived>::flatten() &&
 {
     static_assert(is_flowable<item_t<Derived>>,
         "flatten() requires a flow whose item type is Flowable");
     return detail::flatten_adaptor<Derived>(consume());
+}
+
+template <typename D>
+template <typename Func>
+constexpr auto flow_base<D>::flat_map(Func func) &&
+{
+    static_assert(std::is_invocable_v<Func&, item_t<D>>,
+    "Incompatible callable passed to flat_map()");
+    static_assert(is_flowable<std::invoke_result_t<Func&, item_t<D>>>,
+    "Function passed to flat_map() must return a Flowable type");
+    return consume().map(std::move(func)).flatten();
 }
 
 }

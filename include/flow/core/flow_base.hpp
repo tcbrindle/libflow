@@ -459,9 +459,17 @@ public:
     ///
     /// This is equivalent to `std::ranges::join`
     ///
-    /// \return
+    /// @return A new flatten adaptor
     constexpr auto flatten() &&;
 
+    /// Given a callable which returns a Flowable type, applies the function
+    /// to each item in the flow and then flattens the resulting flows.
+    ///
+    /// Equivalent to `map(func).flatten()`.
+    ///
+    /// @param func A callable with signature compatible with `(item_t<Flow>) -> R`,
+    ///             where `R` is a Flowable type
+    /// @return A new adaptor which maps then flattens
     template <typename Func>
     constexpr auto flat_map(Func func) &&;
 
