@@ -49,6 +49,7 @@ add_executable(test-libflow
     test_take.cpp
     test_take_while.cpp
     test_to.cpp
+    test_zip.cpp
     test_zip_with.cpp
 )
 target_link_libraries(test-libflow flow catch-main)

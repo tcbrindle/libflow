@@ -38,6 +38,7 @@
 #include <flow/op/to_range.hpp>
 #include <flow/op/try_fold.hpp>
 #include <flow/op/try_for_each.hpp>
+#include <flow/op/zip.hpp>
 #include <flow/op/zip_with.hpp>
 
 #include <flow/source/any_flow.hpp>

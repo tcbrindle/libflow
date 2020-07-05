@@ -64,7 +64,7 @@ public:
     constexpr auto end() { return iterator{}; }
 
 private:
-    bool do_next()
+    constexpr bool do_next()
     {
         item_ = flow_.next();
         return (bool) item_;

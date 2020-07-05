@@ -473,26 +473,26 @@ public:
     template <typename Func>
     constexpr auto flat_map(Func func) &&;
 
+    /// Given a set of Flowable objects, processes them in lockstep, returning
+    /// a `std::pair` or `std::tuple` of their items.
+    ///
+    /// The resulting adaptor will be exhausted when the first of the component
+    /// flows is exhausted.
+    ///
+    /// @param flowables A pack of flowable objects
+    /// @return A new zip adaptor
     template <typename... Flowables>
-    constexpr auto zip(Flowables&&... flowables) &&
-    {
-        static_assert((is_flowable<Flowables> && ...),
-                      "Arguments to zip() must be Flowable types");
+    constexpr auto zip(Flowables&&... flowables) &&;
 
-        using item_type = std::conditional_t<
-            sizeof...(Flowables) == 1,
-             std::pair<item_t<Derived>, item_t<flow_t<Flowables>>...>,
-             std::tuple<item_t<Derived>, item_t<flow_t<Flowables>>...>>;
-
-        return consume().zip_with([](auto&& v1, auto&& v2) {
-            return item_type{FLOW_FWD(v1), FLOW_FWD(v2)};
-        }, FLOW_FWD(flowables)...);
-    }
+    /// Adapts the flow so that it returns (item, index) pairs.
+    ///
+    /// Equivalent to zip(flow::ints());
+    ///
+    /// @return A new enumerate adaptor
+    constexpr auto enumerate() &&;
 
     template <typename Func, typename... Flowables>
     constexpr auto zip_with(Func func, Flowables&&... flowables) &&;
-
-    constexpr auto enumerate() &&;
 
     template <typename Key>
     constexpr auto group_by(Key func) &&;
