@@ -17,6 +17,9 @@ struct istreambuf_flow : flow_base<istreambuf_flow<CharT, Traits>> {
         : buf_(buf)
     {}
 
+    istreambuf_flow(istreambuf_flow&&) = default;
+    istreambuf_flow& operator=(istreambuf_flow&&) = default;
+
     auto next() -> maybe<CharT>
     {
         if (!buf_) {
