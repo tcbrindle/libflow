@@ -5,6 +5,8 @@
 
 #include "macros.hpp"
 
+#include <map>
+
 namespace {
 
 using namespace std::literals;
@@ -261,6 +263,45 @@ TEST_CASE("flow::move()", "[flow.move]")
     for (auto& p : ptrs) {
         REQUIRE_FALSE((bool) p);
     }
+}
+
+/*
+ * elements() tests
+ */
+constexpr bool test_elements()
+{
+    using triple = std::tuple<int, int, int>;
+
+    std::array arr = {
+        triple{1, 2, 3},
+        triple{4, 5, 6},
+        triple{7, 8, 9}
+    };
+
+    return flow::elements<2>(arr).equal(flow::of{3, 6, 9});
+}
+static_assert(test_elements());
+
+TEST_CASE("elements()", "[flow.elements]")
+{
+    REQUIRE(test_elements());
+}
+
+/*
+ * keys()/values() tests
+ */
+
+TEST_CASE("keys()/values()", "[flow.keys] [flow.values]")
+{
+    auto map = std::map<int, std::string>{
+        {1, "one"},
+        {2, "two"},
+        {3, "three"}
+    };
+
+    REQUIRE((flow::keys(map).to_vector() == std::vector{1, 2, 3}));
+
+    REQUIRE((flow::values(map).to_vector() == std::vector<std::string>{"one", "two", "three"}));
 }
 
 }

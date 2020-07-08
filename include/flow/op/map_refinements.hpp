@@ -88,6 +88,56 @@ constexpr auto flow_base<D>::move() && -> decltype(auto)
     }
 }
 
+// elements
+
+template <std::size_t N>
+inline constexpr auto elements = [](auto&& flowable) {
+  static_assert(is_flowable<decltype(flowable)>,
+                "Argument to flow::elements() must be a Flowable type");
+  return FLOW_COPY(flow::from(FLOW_FWD(flowable))).template elements<N>();
+};
+
+template <typename D>
+template <std::size_t N>
+constexpr auto flow_base<D>::elements() &&
+{
+    auto get_fn = [](auto&& val) -> remove_rref_t<decltype(std::get<N>(FLOW_FWD(val)))> {
+        return std::get<N>(FLOW_FWD(val));
+    };
+    static_assert(std::is_invocable_v<decltype(get_fn), item_t<D>>,
+                  "Flow's item type is not tuple-like");
+
+    return consume().map(std::move(get_fn));
+}
+
+// keys
+
+inline constexpr auto keys = [](auto&& flowable) {
+    static_assert(is_flowable<decltype(flowable)>,
+                  "Argument to flow::keys() must be a Flowable type");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).keys();
+};
+
+template <typename D>
+constexpr auto flow_base<D>::keys() &&
+{
+    return consume().template elements<0>();
+}
+
+// values
+
+inline constexpr auto values = [](auto&& flowable) {
+  static_assert(is_flowable<decltype(flowable)>,
+                "Argument to flow::values() must be a Flowable type");
+  return FLOW_COPY(flow::from(FLOW_FWD(flowable))).values();
+};
+
+template <typename D>
+constexpr auto flow_base<D>::values() &&
+{
+    return consume().template elements<1>();
+}
+
 }
 
 #endif

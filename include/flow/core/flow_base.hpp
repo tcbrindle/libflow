@@ -534,26 +534,26 @@ public:
     template <typename D = Derived>
     constexpr auto split(value_t<D> delimiter) &&;
 
+    /// If the flow's item type is tuple-like (e.g. `std::tuple` or `std::pair`),
+    /// returns an adaptor whose item type is the `N`th element of each tuple,
+    /// where indexing is zero-based.
+    ///
+    /// @tparam N Tuple index which the adaptor should return
+    /// @return A new tuple element adaptor
     template <std::size_t N>
-    constexpr auto elements() &&
-    {
-        return consume().map(
-            [] (auto&& val) -> remove_rref_t<decltype(std::get<N>(FLOW_FWD(val)))> {
-            return std::get<N>(FLOW_FWD(val));
-        });
-    }
+    constexpr auto elements() &&;
 
-    template <typename = Derived>
-    constexpr auto keys() &&
-    {
-        return consume().template elements<0>();
-    }
+    /// If the flow's item type is a "tuple-like" key-value pair, returns an
+    /// adaptor whose item type is the "key" part.
+    ///
+    /// This is a convenience function equivalent to `elements<0>()`.
+    constexpr auto keys() &&;
 
-    template <typename = Derived>
-    constexpr auto values() &&
-    {
-        return consume().template elements<1>();
-    }
+    /// If the flow's item type is a "tuple-like" key-value pair, returns an
+    /// adaptor whose item type is the "value" part.
+    ///
+    /// This is a convenience function equivalent to `elements<1>()`.
+    constexpr auto values() &&;
 
     template <typename Flowable>
     constexpr auto equal(Flowable&& flowable) -> bool
