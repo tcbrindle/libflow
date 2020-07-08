@@ -6,7 +6,6 @@
 #include <flow/core/macros.hpp>
 #include <flow/core/predicates.hpp>
 
-#include <flow/op/adapt.hpp>
 #include <flow/op/all_any_none.hpp>
 #include <flow/op/chain.hpp>
 #include <flow/op/chunk.hpp>

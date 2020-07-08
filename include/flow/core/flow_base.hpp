@@ -267,9 +267,6 @@ public:
     template <typename Cmp = less>
     constexpr auto is_sorted(Cmp cmp = Cmp{}) -> bool;
 
-    template <typename NextFn>
-    constexpr auto adapt(NextFn next_fn) &&;
-
     /// Consumes the flow, returning a new flow which lazily invokes the given
     /// callable for each item as it is processed.
     ///
