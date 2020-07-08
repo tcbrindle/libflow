@@ -491,25 +491,48 @@ public:
     /// @return A new enumerate adaptor
     constexpr auto enumerate() &&;
 
+    /// Given a set of flowable objects, processes them in lockstep and
+    /// calls `func` passing the flows' items as arguments. The result of
+    /// `func` is used as the item type of the resulting flow.
+    ///
+    /// Think of this an an n-ary version of `map()`.
+    ///
+    /// @param func Callable with signature compatible with `(item_t<Flows>...) -> R`,
+    ///             where R may not be `void`
+    /// @param flowables A pack of flowable objects
+    /// @return A new flow whose item type is `R`.
     template <typename Func, typename... Flowables>
     constexpr auto zip_with(Func func, Flowables&&... flowables) &&;
 
+    /// Turns a flow into a flow-of-flows, where each inner flow ("group") is
+    /// delimited by the return value of `func`.
+    ///
+    /// The key function `func` must return a type that is equality comparable,
+    /// and must always return the same output when given the same input, no
+    /// matter how many times it is called.
+    ///
+    /// @note This adaptor requires a multipass flow
+    ///
+    /// \param func Callable with signature (item_t<Flow>) -> K, where K is
+    ///             equality comparable
+    /// \return A new group_by adaptor
     template <typename Key>
     constexpr auto group_by(Key func) &&;
+
+    /// Consumes the flow, returning a new flow where each item is a flow
+    /// containing `size` items. The last chunk may have fewer items.
+    ///
+    /// @note This adaptor requires a multipass flow
+    ///
+    /// @param size The size of each chunk. Must be greater than zero.
+    /// @return A new chunk adaptor
+    constexpr auto chunk(dist_t size) &&;
 
     template <typename D = Derived>
     constexpr auto split(value_t<D> delimiter) &&
     {
         return consume().group_by(flow::pred::eq(std::move(delimiter))).stride(2);
     }
-
-    /// Consumes the flow, returning a new flow where each item is a flow
-    /// containing `size` items. The last chunk may have fewer items.
-    ///
-    /// Note that, to avoid copies or allocations, each inner flow is invalidated
-    /// once the parent flow is advanced. In other words, the inner flows must
-    /// be processed in order.
-    constexpr auto chunk(dist_t size) &&;
 
     template <std::size_t N>
     constexpr auto elements() &&

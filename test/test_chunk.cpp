@@ -69,7 +69,7 @@ constexpr bool test_chunk()
 
     // Test round-tripping through chunk and flatten
     {
-        auto f = flow::from(arr).chunk(3).flatten();
+        auto f = flow::chunk(arr,3).flatten();
         int counter = 0;
         FLOW_FOR(int const& i, f)
         {

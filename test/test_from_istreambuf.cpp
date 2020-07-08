@@ -17,6 +17,8 @@ TEST_CASE("from_istreambuf basic", "[flow.from_istreambuf]")
     std::istringstream names{"Adam Barbara Charlie Danielle Edward"};
 
     const auto vec = flow::from_istreambuf(names)
+                   // HACKHACKHACK
+                   .apply([](auto&& f) { return flow::from(std::move(f).to_vector()); })
                    .split(' ')
                    .map([](auto f) { return std::move(f).to_string(); })
                    .to_vector();
@@ -29,6 +31,8 @@ TEST_CASE("from_istreambuf basic", "[flow.from_istreambuf]")
 std::array<uint8_t, 6> parse_mac_address(std::istringstream& str)
 {
     auto f = flow::from_istreambuf(str)
+            // HACKHACKHACK
+            .apply([](auto&& f) { return flow::from(std::move(f).to_vector()); })
             .split(':')
             .map([](auto f) {
                 auto s = std::move(f).to_string();

@@ -3,119 +3,87 @@
 #define FLOW_OP_GROUP_BY_HPP_INCLUDED
 
 #include <flow/core/flow_base.hpp>
+#include <flow/op/take.hpp>
 
 namespace flow {
 
 namespace detail {
 
-template <typename Base, typename Key>
-struct group_by_adaptor : flow_base<group_by_adaptor<Base, Key>> {
+template <typename Flow, typename KeyFn>
+struct group_by_adaptor : flow_base<group_by_adaptor<Flow, KeyFn>> {
 private:
+    Flow flow_;
+    FLOW_NO_UNIQUE_ADDRESS KeyFn key_fn_;
 
-    using key_type = std::invoke_result_t<Key&, item_t<Base>&>;
 
-    Base base_;
-    FLOW_NO_UNIQUE_ADDRESS Key key_;
-    next_t<Base> next_item_{};
-    maybe<key_type> last_key_{};
-    bool group_exhausted_ = false;
 
-    struct group : flow_base<group>
-    {
-        constexpr explicit group(group_by_adaptor& parent)
-            : parent_(std::addressof(parent))
-        {}
-
-        constexpr group(group&&) noexcept = default;
-        constexpr group& operator=(group&&) noexcept = default;
-
-        constexpr auto next() -> next_t<Base>
-        {
-            if (parent_->group_exhausted_) {
-                return {};
-            }
-
-            if (!parent_->next_item_) {
-                if (!parent_->do_next()) {
-                    parent_->group_exhausted_ = true;
-                    return {};
-                }
-            }
-
-            auto item = std::move(parent_->next_item_);
-            parent_->next_item_.reset();
-
-            return item;
-        }
-
-    private:
-        group_by_adaptor* parent_;
-    };
-
-    constexpr auto do_next() -> bool
-    {
-        next_item_ = base_.next();
-        if (!next_item_) {
-            // We are done
-            return false;
-        }
-
-        auto&& next_key = invoke(key_, *next_item_);
-        if (next_key != *last_key_) {
-            last_key_ = FLOW_FWD(next_key);
-            return false;
-        }
-
-        return true;
-    }
+    using group = take_adaptor<subflow_t<Flow>>;
 
 public:
-    constexpr group_by_adaptor(Base&& base, Key&& key)
-        : base_(std::move(base)), key_(std::move(key))
+    constexpr group_by_adaptor(Flow&& flow, KeyFn&& key_fn)
+        : flow_(std::move(flow)),
+          key_fn_(std::move(key_fn))
     {}
 
     constexpr auto next() -> maybe<group>
     {
-        // Is this the first time we're being called?
-        if (!last_key_) {
-            next_item_ = base_.next();
-            if (next_item_) {
-                last_key_ = invoke(key_, *next_item_);
-                return group{*this};
-            } else {
-                return {};
-            }
-        }
+        auto image = flow_.subflow();
 
-        // If the last group was exhausted, go ahead and start a new group
-        if (group_exhausted_) {
-            // Did we run out of items?
-            if (!next_item_) {
-                return {};
-            }
-
-            group_exhausted_ = false;
-            return group{*this};
-        }
-
-        // Last group was not exhausted: fast-forward to the next group
-        while (do_next())
-            ;
-        if (!next_item_) {
+        auto m = flow_.next();
+        if (!m) {
             return {};
         }
-        return group{*this};
+        auto&& last_key = invoke(key_fn_, *m);
 
+        auto peek = flow_.subflow();
+        dist_t counter = 1;
+
+        while (true) {
+            auto n = peek.next();
+            if (!n) {
+                break;
+            }
+
+            if (invoke(key_fn_, *n) != last_key) {
+                break;
+            }
+
+            ++counter;
+            (void) flow_.next();
+        }
+
+        return {std::move(image).take(counter)};
+    }
+
+    constexpr auto subflow() & -> group_by_adaptor<subflow_t<Flow>, function_ref<KeyFn>>
+    {
+        return {flow_.subflow(), function_ref{key_fn_}};
     }
 };
 
 }
 
-template <typename Derived>
-template <typename Key>
-constexpr auto flow_base<Derived>::group_by(Key key) &&
+inline constexpr auto group_by = [](auto&& flowable, auto key_fn)
 {
-    return detail::group_by_adaptor<Derived, Key>(consume(), std::move(key));
+    static_assert(is_flowable<decltype(flowable)>,
+                  "First argument to flow::group_by() must be a Flowable type");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).group_by(std::move(key_fn));
+};
+
+template <typename D>
+template <typename Key>
+constexpr auto flow_base<D>::group_by(Key key) &&
+{
+    static_assert(is_multipass_flow<D>,
+                  "group_by() requires a multipass flow");
+    static_assert(std::is_invocable_v<Key&, item_t<D>>,
+                  "Incompatible key function passed to group_by()");
+    using R = std::invoke_result_t<Key&, item_t<D>>;
+    static_assert(std::is_invocable_v<equal_to, R, R>,
+                  "The result type of the key function passed to group_by() "
+                  "must be equality comparable");
+
+    return detail::group_by_adaptor<D, Key>(consume(), std::move(key));
 }
 
 }
