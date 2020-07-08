@@ -31,6 +31,7 @@
 #include <flow/op/minmax.hpp>
 #include <flow/op/product.hpp>
 #include <flow/op/slide.hpp>
+#include <flow/op/split.hpp>
 #include <flow/op/stride.hpp>
 #include <flow/op/sum.hpp>
 #include <flow/op/take.hpp>

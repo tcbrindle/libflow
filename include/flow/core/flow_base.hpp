@@ -528,11 +528,14 @@ public:
     /// @return A new chunk adaptor
     constexpr auto chunk(dist_t size) &&;
 
+    /// Splits a flow into a flow-of-flows, using `delimiter`.
+    ///
+    /// @note This adaptor requires a multipass flow.
+    ///
+    /// @param delimiter The delimiter to use for the split operation
+    /// @return A new split adaptor
     template <typename D = Derived>
-    constexpr auto split(value_t<D> delimiter) &&
-    {
-        return consume().group_by(flow::pred::eq(std::move(delimiter))).stride(2);
-    }
+    constexpr auto split(value_t<D> delimiter) &&;
 
     template <std::size_t N>
     constexpr auto elements() &&
