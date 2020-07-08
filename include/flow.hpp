@@ -16,6 +16,7 @@
 #include <flow/op/cycle.hpp>
 #include <flow/op/drop.hpp>
 #include <flow/op/drop_while.hpp>
+#include <flow/op/equal.hpp>
 #include <flow/op/filter.hpp>
 #include <flow/op/find.hpp>
 #include <flow/op/flatten.hpp>

@@ -267,6 +267,18 @@ public:
     template <typename Cmp = less>
     constexpr auto is_sorted(Cmp cmp = Cmp{}) -> bool;
 
+    /// Processes the flows, returning true if both flows contain equal items
+    /// (according to `cmp`), and both flows end at the same time.
+    ///
+    /// Unlike most operations, this function is short-circuiting. It will stop
+    /// processing the flows when it finds the first non-equal pair of items.
+    ///
+    /// @param flowable
+    /// @param cmp Comparator to use, defaulting to std::equal_to<>
+    /// @return True if the flows contain equal items, and false otherwise
+    template <typename Flowable, typename Cmp = equal_to>
+    constexpr auto equal(Flowable&& flowable, Cmp cmp = Cmp{}) -> bool;
+
     /// Consumes the flow, returning a new flow which lazily invokes the given
     /// callable for each item as it is processed.
     ///
@@ -554,31 +566,6 @@ public:
     ///
     /// This is a convenience function equivalent to `elements<1>()`.
     constexpr auto values() &&;
-
-    template <typename Flowable>
-    constexpr auto equal(Flowable&& flowable) -> bool
-    {
-        static_assert(is_flowable<Flowable>,
-                      "Argument to equal() must be a Flowable type");
-
-        auto&& other = flow::from(FLOW_FWD(flowable));
-
-        while (true) {
-            auto m1 = derived().next();
-            auto m2 = other.next();
-
-            if (!m1) {
-                return !static_cast<bool>(m2);
-            }
-            if (!m2) {
-                return false;
-            }
-
-            if (*m1 != *m2) {
-                return false;
-            }
-        }
-    }
 
     constexpr auto to_range() &&;
 

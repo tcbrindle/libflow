@@ -31,6 +31,7 @@ add_executable(test-libflow
     test_cycle.cpp
     test_drop.cpp
     test_drop_while.cpp
+    test_equal.cpp
     test_filter.cpp
     test_find.cpp
     test_flatten.cpp
