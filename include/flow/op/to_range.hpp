@@ -34,9 +34,16 @@ private:
             return *this;
         }
 
+        constexpr void operator++(int) { ++*this;}
+
         constexpr reference operator*() const
         {
             return *std::move(parent_->item_);
+        }
+
+        constexpr pointer operator->() const
+        {
+            return std::addressof(*parent_->item_);
         }
 
         friend constexpr bool operator==(const iterator& lhs,
@@ -75,6 +82,13 @@ private:
 };
 
 }
+
+inline constexpr auto to_range = [](auto&& flowable)
+{
+    static_assert(is_flowable<decltype(flowable)>,
+                  "Argument to flow::to_range() must be a Flowable type");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).to_range();
+};
 
 template <typename D>
 constexpr auto flow_base<D>::to_range() &&

@@ -567,6 +567,14 @@ public:
     /// This is a convenience function equivalent to `elements<1>()`.
     constexpr auto values() &&;
 
+    /// Consumes the flow, returning an object that is compatible with the
+    /// standard library's range protocol (that is, it has begin() and end()
+    /// methods which return iterators).
+    ///
+    /// It is mostly useful to allow flows to be used with built-in range-for loops,
+    /// or to pass flows to standard library algorithms.
+    ///
+    /// @return A new range object
     constexpr auto to_range() &&;
 
     template <typename C>
