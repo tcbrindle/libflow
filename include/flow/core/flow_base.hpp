@@ -577,40 +577,59 @@ public:
     /// @return A new range object
     constexpr auto to_range() &&;
 
+    /// Consumes the flow, converting it into a new object of type `C`.
+    ///
+    /// If `std::is_constructible_v<C, Flow&&>` is true, then this is equivalent
+    /// to `return C(move(flow));`.
+    ///
+    /// Otherwise, the flow is first converted to a range, and this function
+    /// returns `C(first, last);` where `first` and `last` are the iterator and
+    /// sentinel types of the range
+    ///
+    /// @tparam C The container type to construct, for example `std::vector<int>`.
+    /// @return A new object of type `C`
     template <typename C>
-    constexpr auto to() &&
-    {
-        auto rng = consume().to_range();
-        static_assert(std::is_constructible_v<C, decltype(rng.begin()), decltype(rng.end())>);
-        return C(rng.begin(), rng.end());
-    }
+    constexpr auto to() && -> C;
 
+    /// Consumes the flow, converting it into a specialisation of template `C`.
+    ///
+    /// This overload uses constructor template argument deduction (CTAD) to
+    /// work out the container template arguments.
+    ///
+    /// @tparam C A class template name, for example `std::vector`.
+    /// @return A new object which is a specialisation of type `C.
     template <template <typename...> typename C>
-    constexpr auto to() &&
-    {
-        auto rng = consume().to_range();
-        return C(rng.begin(), rng.end());
-    }
+    constexpr auto to() &&;
+
+    /// Consumes the flow, converting it into a `std::vector`.
+    ///
+    /// Equivalent to `to_vector<value_t<Flow>>()`.
+    ///
+    /// @returns: A new `std::vector<T>`, where `T` is the value type of the flow
+    auto to_vector() &&;
+
+    /// Consumes the flow, converting it into a `std::vector<T>`.
+    ///
+    /// Requires that the flow's value type is convertible to `T`.
+    ///
+    /// Equivalent to `to<std::vector<T>>()`.
+    ///
+    /// @tparam T The value type of the resulting vector
+    /// @return A new `std::vector<T>` containing the items of this flow.
+    template <typename T>
+    auto to_vector() && -> std::vector<T>;
+
+    /// Consumes the flow, converting it into a `std::string`.
+    ///
+    /// Requires that the flow's value type is convertible to `char`.
+    ///
+    /// Equivalent to `to<std::string>()`, but fractionally less typing.
+    ///
+    /// \return A new `std::string`.
+    auto to_string() && -> std::string;
 
     template <typename = Derived>
     constexpr auto collect() &&;
-
-    constexpr auto to_vector() &&
-    {
-        return consume().template to<std::vector<value_t<Derived>>>();
-    }
-
-    template <typename T>
-    constexpr auto to_vector() && -> std::vector<T>
-    {
-        return consume().template to<std::vector<T>>();
-    }
-
-    template <typename = Derived>
-    constexpr auto to_string() &&
-    {
-        return consume().template to<std::string>();
-    }
 
     template <typename Iter>
     constexpr auto output_to(Iter oiter) && -> Iter
