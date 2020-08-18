@@ -20,34 +20,44 @@ inline constexpr bool is_ctad_constructible_v<
 // These need to be function templates so that the user can supply the template
 // arg, and we can overload on both type template parameters and
 // template template params
-template <typename C, typename Flow>
-constexpr auto to(Flow&& flow) -> C
+template <typename C, typename Flowable>
+constexpr auto to(Flowable&& flowable) -> C
 {
-    return FLOW_FWD(flow).template to<C>();
+    static_assert(is_flowable<Flowable>,
+                  "Argument to flow::to() must be Flowable");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).template to<C>();
 }
 
-template <template <typename...> typename C, typename Flow>
-constexpr auto to(Flow&& flow)
+template <template <typename...> typename C, typename Flowable>
+constexpr auto to(Flowable&& flowable)
 {
-    return FLOW_FWD(flow).template to<C>();
+    static_assert(is_flowable<Flowable>,
+                  "Argument to flow::to() must be Flowable");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).template to<C>();
 }
 
-template <typename Flow>
-auto to_vector(Flow&& flow) -> std::vector<value_t<Flow>>
+template <typename Flowable>
+auto to_vector(Flowable&& flowable) -> std::vector<flow_value_t<Flowable>>
 {
-    return FLOW_FWD(flow).to_vector();
+    static_assert(is_flowable<Flowable>,
+                  "Argument to flow::to_vector() must be Flowable");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).to_vector();
 }
 
-template <typename T, typename Flow>
-auto to_vector(Flow&& flow) -> std::vector<T>
+template <typename T, typename Flowable>
+auto to_vector(Flowable&& flowable) -> std::vector<T>
 {
-    return FLOW_FWD(flow).template to_vector<T>();
+    static_assert(is_flowable<Flowable>,
+                  "Argument to flow::to_vector() must be Flowable");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).template to_vector<T>();
 }
 
-template <typename Flow>
-auto to_string(Flow&& flow) -> std::string
+template <typename Flowable>
+auto to_string(Flowable&& flowable) -> std::string
 {
-    return FLOW_FWD(flow).to_string();
+    static_assert(is_flowable<Flowable>,
+                  "Argument to flow::to_string() must be Flowable");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).to_string();
 }
 
 template <typename D>
