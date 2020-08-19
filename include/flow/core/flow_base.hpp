@@ -632,15 +632,15 @@ public:
     /// be converted to a standard library container.
     constexpr auto collect() &&;
 
+    /// Exhausts the flow, writing each item to the given output iterator
+    ///
+    /// This is equivalent to the standard library's `std::copy()`.
+    ///
+    /// @param oiter An output iterator which is compatible with this flow's item
+    /// type
+    /// @return A copy of the provided iterator
     template <typename Iter>
-    constexpr auto output_to(Iter oiter) && -> Iter
-    {
-        consume().for_each([&oiter] (auto&& val) {
-            *oiter = FLOW_FWD(val);
-            ++oiter;
-        });
-        return oiter;
-    }
+    constexpr auto output_to(Iter oiter) -> Iter;
 
     template <typename Sep = const char*>
     constexpr auto write_to(std::ostream& os, Sep sep = ", ") &&

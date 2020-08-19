@@ -29,6 +29,7 @@
 #include <flow/op/map.hpp>
 #include <flow/op/map_refinements.hpp>
 #include <flow/op/minmax.hpp>
+#include <flow/op/output_to.hpp>
 #include <flow/op/product.hpp>
 #include <flow/op/slide.hpp>
 #include <flow/op/split.hpp>
