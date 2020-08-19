@@ -625,10 +625,11 @@ public:
     ///
     /// Equivalent to `to<std::string>()`, but fractionally less typing.
     ///
-    /// \return A new `std::string`.
+    /// @return A new `std::string`.
     auto to_string() && -> std::string;
 
-    template <typename = Derived>
+    /// Consumes the flow, collecting its items into an object which can in turn
+    /// be converted to a standard library container.
     constexpr auto collect() &&;
 
     template <typename Iter>

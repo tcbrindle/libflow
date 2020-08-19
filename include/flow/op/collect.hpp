@@ -12,18 +12,22 @@ namespace detail {
 template <typename Flow>
 struct collector {
 
-    constexpr collector(Flow&& flow)
+    constexpr explicit collector(Flow&& flow)
         : flow_(std::move(flow))
     {}
 
     template <typename C>
     constexpr operator C() &&
     {
-        using iter_t = decltype(std::move(flow_).to_range().begin());
-        static_assert(std::is_constructible_v<C, iter_t, iter_t>,
-            "Incompatible type on LHS of collect()");
-        auto rng = std::move(flow_).to_range();
-        return C(rng.begin(), rng.end());
+        if constexpr (std::is_constructible_v<C, Flow&&>) {
+            return C(std::move(flow_));
+        } else {
+            using iter_t = decltype(std::move(flow_).to_range().begin());
+            static_assert(std::is_constructible_v<C, iter_t, iter_t>,
+                          "Incompatible type on LHS of collect()");
+            auto rng = std::move(flow_).to_range();
+            return C(rng.begin(), rng.end());
+        }
     }
 
 private:
@@ -32,8 +36,13 @@ private:
 
 }
 
+template <typename Flowable>
+constexpr auto collect(Flowable&& flowable)
+{
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).collect();
+}
+
 template <typename Derived>
-template <typename>
 constexpr auto flow_base<Derived>::collect() &&
 {
     return detail::collector<Derived>(consume());
