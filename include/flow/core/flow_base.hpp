@@ -642,18 +642,19 @@ public:
     template <typename Iter>
     constexpr auto output_to(Iter oiter) -> Iter;
 
-    template <typename Sep = const char*>
-    constexpr auto write_to(std::ostream& os, Sep sep = ", ") &&
-    {
-        consume().for_each([&os, &sep, first = true](auto&& m) mutable {
-            if (first) {
-                first = false;
-            } else {
-                os << sep;
-            }
-            os << FLOW_FWD(m);
-        });
-    }
+    /// Exhausts the flow, writing each item to the given output stream.
+    ///
+    /// Each item is written to the stream using `stream << separator << item`
+    /// (except for the first item, which is not preceded by a separator).
+    /// The separator may be any C++ type which is "output streamable". The
+    /// default separator is `", "`.
+    ///
+    /// @param os A specialisation of `std::basic_ostream` to write to
+    /// @param sep Separator to use, defaulting to `", "`.
+    /// @returns The provided `basic_ostream` reference
+    template <typename Sep = const char*, typename CharT, typename Traits>
+    constexpr auto write_to(std::basic_ostream<CharT, Traits>& os, Sep sep = ", ")
+        -> std::basic_ostream<CharT, Traits>&;
 };
 
 }

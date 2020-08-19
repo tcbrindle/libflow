@@ -6,7 +6,7 @@
 
 namespace flow {
 
-constexpr auto output_to = [](auto&& flowable, auto oiter) {
+inline constexpr auto output_to = [](auto&& flowable, auto oiter) {
     static_assert(is_flowable<decltype(flowable)>,
                   "First argument to flow::output_to() must be Flowable");
     // C++20: static_assert(std::output_iterator<decltype(oiter)>);
