@@ -2,8 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
-
-#include <iostream>
+#include "macros.hpp"
 
 namespace {
 
@@ -32,7 +31,9 @@ constexpr bool test_c_str()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_c_str());
+#endif
 
 TEST_CASE("flow::c_str", "[flow.c_str]")
 {

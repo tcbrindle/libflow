@@ -39,7 +39,9 @@ constexpr bool test_map_lambda()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_map_lambda());
+#endif
 
 constexpr int plus_one(int i) { return i + 1; }
 
@@ -57,7 +59,9 @@ constexpr bool test_map_function()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_map_function());
+#endif
 
 constexpr bool test_map_pmf()
 {
@@ -78,7 +82,9 @@ constexpr bool test_map_pmf()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_map_pmf());
+#endif
 
 struct int_pair {
     int first;
@@ -104,7 +110,7 @@ constexpr bool test_map_pmd()
     return true;
 }
 
-#if !COMPILER_IS_GCC
+#if !COMPILER_IS_GCC && !COMPILER_IS_MSVC
 static_assert(test_map_pmd());
 #endif
 
@@ -162,7 +168,9 @@ constexpr bool test_map_identity()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_map_identity());
+#endif
 
 constexpr bool test_map_subflow()
 {
@@ -179,7 +187,9 @@ constexpr bool test_map_subflow()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_map_subflow());
+#endif
 
 TEST_CASE("map()", "[flow.map]")
 {

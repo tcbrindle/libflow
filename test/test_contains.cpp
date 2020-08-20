@@ -2,6 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 namespace {
 
@@ -87,7 +88,9 @@ constexpr bool test_nonmember_contains()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_nonmember_contains());
+#endif
 
 TEST_CASE("contains() non-member", "[flow.find]")
 {

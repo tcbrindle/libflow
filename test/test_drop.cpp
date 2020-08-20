@@ -2,6 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 namespace {
 
@@ -109,7 +110,9 @@ constexpr bool test_drop()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_drop());
+#endif
 
 TEST_CASE("drop", "[flow.drop]")
 {

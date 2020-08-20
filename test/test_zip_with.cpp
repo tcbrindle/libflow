@@ -2,6 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 namespace {
 
@@ -14,7 +15,9 @@ constexpr bool test_zip_with2()
         .take(5)
         .equal(std::array{10, 12, 14, 16, 18});
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_zip_with2());
+#endif
 
 constexpr bool test_zip_with3()
 {
@@ -24,7 +27,9 @@ constexpr bool test_zip_with3()
                 .take(5)
                 .equal(std::array{1, 8, 27, 64, 125});
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_zip_with3());
+#endif
 
 constexpr bool test_zip_with2_subflow()
 {
@@ -44,7 +49,9 @@ constexpr bool test_zip_with2_subflow()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_zip_with2_subflow());
+#endif
 
 constexpr bool test_zip_with3_subflow()
 {
@@ -65,7 +72,9 @@ constexpr bool test_zip_with3_subflow()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_zip_with3_subflow());
+#endif
 
 constexpr bool test_zip_with2_size()
 {
@@ -78,7 +87,9 @@ constexpr bool test_zip_with2_size()
 
     return f.size() == 3;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_zip_with2_size());
+#endif
 
 constexpr bool test_zip_with3_size()
 {
@@ -91,7 +102,9 @@ constexpr bool test_zip_with3_size()
 
     return f.size() == 3;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_zip_with3_size());
+#endif
 
 TEST_CASE("zip_with", "[flow.zip_with]")
 {

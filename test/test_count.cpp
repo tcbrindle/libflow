@@ -2,6 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 namespace {
 
@@ -34,7 +35,9 @@ constexpr bool test_nonmember_nullary_count()
 
     return flow::count(flow::empty<std::string_view>{}) == 0;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_nonmember_nullary_count());
+#endif
 
 TEST_CASE("nonmember nullary count()", "[flow.count]")
 {
@@ -72,7 +75,9 @@ constexpr bool test_nonmember_unary_count()
     }
     return flow::count(flow::empty<int>{}, 1) == 0;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_nonmember_unary_count());
+#endif
 
 TEST_CASE("nonmember unary count()", "[flow.count]")
 {

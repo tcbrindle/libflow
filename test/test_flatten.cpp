@@ -2,11 +2,13 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 #include <iostream>
 
 namespace {
-#ifndef _MSC_VER
+
+#if !COMPILER_IS_MSVC
 constexpr bool test_flatten()
 {
     auto f = [] {
@@ -107,7 +109,9 @@ constexpr bool test_flat_map()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_flat_map());
+#endif
 
 TEST_CASE("flat map", "[flow.flat_map]")
 {

@@ -2,6 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 namespace {
 
@@ -66,7 +67,9 @@ constexpr bool test_take_while()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_take_while());
+#endif
 
 TEST_CASE("take while", "[flow.take_while]")
 {

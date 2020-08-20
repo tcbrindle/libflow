@@ -106,7 +106,9 @@ constexpr bool test_filter()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_filter());
+#endif
 
 TEST_CASE("filter", "[flow.filter]")
 {

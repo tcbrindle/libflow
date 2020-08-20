@@ -12,12 +12,23 @@ namespace flow {
 
 // as()
 
+namespace detail {
+
 template <typename T>
-inline constexpr auto as = [](auto&& flowable) {
-    static_assert(is_flowable<decltype(flowable)>,
-                  "Argument to flow::as() must be a Flowable type");
-    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).template as<T>();
+struct as_op {
+    template <typename Flowable>
+    constexpr auto operator()(Flowable&& flowable) const
+    {
+        static_assert(is_flowable<decltype(flowable)>,
+                      "Argument to flow::as() must be a Flowable type");
+        return FLOW_COPY(flow::from(FLOW_FWD(flowable))).template as<T>();
+    }
 };
+
+}
+
+template <typename T>
+inline constexpr auto as = detail::as_op<T>{};
 
 template <typename D>
 template <typename T>
@@ -90,12 +101,23 @@ constexpr auto flow_base<D>::move() && -> decltype(auto)
 
 // elements
 
+namespace detail {
+
 template <std::size_t N>
-inline constexpr auto elements = [](auto&& flowable) {
-  static_assert(is_flowable<decltype(flowable)>,
-                "Argument to flow::elements() must be a Flowable type");
-  return FLOW_COPY(flow::from(FLOW_FWD(flowable))).template elements<N>();
+struct elements_op {
+    template <typename Flowable>
+    constexpr auto operator()(Flowable&& flowable) const
+    {
+        static_assert(is_flowable<decltype(flowable)>,
+                      "Argument to flow::elements() must be a Flowable type");
+        return FLOW_COPY(flow::from(FLOW_FWD(flowable))).template elements<N>();
+    }
 };
+
+}
+
+template <std::size_t N>
+inline constexpr auto elements = detail::elements_op<N>{};
 
 template <typename D>
 template <std::size_t N>

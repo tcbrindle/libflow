@@ -2,6 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 namespace {
 
@@ -69,7 +70,9 @@ constexpr bool test_take()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_take());
+#endif
 
 TEST_CASE("Take", "[flow.take]")
 {

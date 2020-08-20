@@ -2,6 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 #include <set>
 
@@ -327,9 +328,10 @@ constexpr bool test_slide_partial(const Ints ints)
 }
 
 // constexpr tests with array
+#if !COMPILER_IS_MSVC
 static_assert(test_slide_no_partial(std::array{1, 2, 3, 4, 5}));
 static_assert(test_slide_partial(std::array{1, 2, 3, 4, 5}));
-
+#endif
 
 TEST_CASE("slide", "[flow.slide]")
 {

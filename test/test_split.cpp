@@ -2,6 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 namespace {
 
@@ -49,7 +50,9 @@ constexpr bool test_split()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_split());
+#endif
 
 TEST_CASE("Split with delimiter", "[flow.split]")
 {

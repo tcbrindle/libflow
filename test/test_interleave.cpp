@@ -2,6 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 #include <iostream>
 
@@ -59,7 +60,9 @@ constexpr bool test_interleave()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_interleave());
+#endif
 
 TEST_CASE("interleave", "[flow.interleave]")
 {

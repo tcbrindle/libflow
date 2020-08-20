@@ -2,6 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 namespace {
 
@@ -55,7 +56,9 @@ constexpr bool test_cycle()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_cycle());
+#endif
 
 TEST_CASE("cycle", "[flow.cycle]")
 {

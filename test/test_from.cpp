@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 namespace {
 #ifndef _MSC_VER
@@ -241,7 +242,9 @@ constexpr bool test_to_flow()
 
     return success;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_to_flow());
+#endif
 
 TEST_CASE("flow::from with custom flowable type", "[flow.from]")
 {
