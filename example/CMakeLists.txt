@@ -8,7 +8,7 @@ function(add_example NAME)
     endif()
 
     if (MSVC)
-        target_compile_options(example_${name} PRIVATE /await)
+        target_compile_options(example_${NAME} PRIVATE /await)
     endif()
 endfunction()
 
