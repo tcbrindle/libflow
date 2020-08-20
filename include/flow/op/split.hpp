@@ -6,10 +6,19 @@
 
 namespace flow {
 
-inline constexpr auto split = [](auto&& flowable, flow_value_t<decltype(flowable)> delim)
-{
-    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).split(delim);
+namespace detail {
+
+struct split_op {
+    template <typename Flowable>
+    constexpr auto operator()(Flowable&& flowable, flow_value_t<Flowable> delim) const
+    {
+        return FLOW_COPY(flow::from(FLOW_FWD(flowable))).split(delim);
+    }
 };
+
+}
+
+inline constexpr auto split = detail::split_op{};
 
 template <typename Derived>
 template <typename D>
