@@ -23,11 +23,16 @@ constexpr auto make_predicate(Lambda&& lambda)
     return predicate<Lambda>{FLOW_FWD(lambda)};
 }
 
+// This could/should be a lambda, but it confuses MSVC
 template <typename Op>
-inline constexpr auto cmp = [](auto&& val) {
-    return predicate{[val = FLOW_FWD(val)](auto const& other) {
-        return Op{}(other, val);
-    }};
+struct cmp {
+    template <typename T>
+    constexpr auto operator()(T&& val) const
+    {
+        return predicate{[val = FLOW_FWD(val)](const auto& other) {
+            return Op{}(other, val);
+        }};
+    }
 };
 
 } // namespace detail
@@ -92,12 +97,12 @@ inline constexpr auto neither = [](auto&& p1, auto&& nor) {
     return not_(either(FLOW_FWD(p1), FLOW_FWD(nor)));
 };
 
-inline constexpr auto eq = detail::cmp<flow::equal_to>;
-inline constexpr auto neq = detail::cmp<flow::not_equal_to>;
-inline constexpr auto lt = detail::cmp<flow::less>;
-inline constexpr auto gt = detail::cmp<flow::greater>;
-inline constexpr auto leq = detail::cmp<flow::less_equal>;
-inline constexpr auto geq = detail::cmp<flow::greater_equal>;
+inline constexpr auto eq = detail::cmp<flow::equal_to>{};
+inline constexpr auto neq = detail::cmp<flow::not_equal_to>{};
+inline constexpr auto lt = detail::cmp<flow::less>{};
+inline constexpr auto gt = detail::cmp<flow::greater>{};
+inline constexpr auto leq = detail::cmp<flow::less_equal>{};
+inline constexpr auto geq = detail::cmp<flow::greater_equal>{};
 
 /// Returns true if the given value is greater than a zero of the same type.
 inline constexpr auto positive = detail::make_predicate([](auto const& val) -> bool {
