@@ -34,7 +34,8 @@ struct zip_with_adaptor : flow_base<zip_with_adaptor<Func, Flows...>> {
 
     static_assert(sizeof...(Flows) > 0);
 
-    using item_type = std::invoke_result_t<Func&, item_t<Flows>...>;
+    // ICE in MSVC if this is changed to invoke_result_t *sigh*
+    using item_type = typename std::invoke_result<Func&, item_t<Flows>...>::type;
 
     static constexpr bool is_infinite = (is_infinite_flow<Flows> && ...);
 
