@@ -17,6 +17,12 @@ struct predicate : Lambda {};
 template <typename Lambda>
 predicate(Lambda&&) -> predicate<Lambda>;
 
+template <typename Lambda>
+constexpr auto make_predicate(Lambda&& lambda)
+{
+    return predicate<Lambda>{FLOW_FWD(lambda)};
+}
+
 template <typename Op>
 inline constexpr auto cmp = [](auto&& val) {
     return predicate{[val = FLOW_FWD(val)](auto const& other) {
@@ -94,19 +100,19 @@ inline constexpr auto leq = detail::cmp<flow::less_equal>;
 inline constexpr auto geq = detail::cmp<flow::greater_equal>;
 
 /// Returns true if the given value is greater than a zero of the same type.
-inline constexpr auto positive = detail::predicate{[](auto const& val) -> bool {
+inline constexpr auto positive = detail::make_predicate([](auto const& val) -> bool {
     return val > decltype(val){0};
-}};
+});
 
 /// Returns true if the given value is less than a zero of the same type.
-inline constexpr auto negative = detail::predicate{[](auto const& val) -> bool {
+inline constexpr auto negative = detail::make_predicate([](auto const& val) -> bool {
     return val < decltype(val){0};
-}};
+});
 
 /// Returns true if the given value is not equal to a zero of the same type.
-inline constexpr auto nonzero = detail::predicate{[](auto const& val) -> bool {
+inline constexpr auto nonzero = detail::make_predicate([](auto const& val) -> bool {
     return val != decltype(val){0};
-}};
+});
 
 /// Given a sequence of values, constructs a predicate which returns true
 /// if its argument compares equal to one of the values
@@ -117,13 +123,13 @@ inline constexpr auto in = [](auto const&... vals) {
     }};
 };
 
-inline constexpr auto even = detail::predicate{[](auto const& val) -> bool {
+inline constexpr auto even = detail::make_predicate([](auto const& val) -> bool {
     return val % decltype(val){2} == decltype(val){0};
-}};
+});
 
-inline constexpr auto odd = detail::predicate{[](auto const& val) -> bool {
+inline constexpr auto odd = detail::make_predicate([](auto const& val) -> bool {
   return val % decltype(val){2} != decltype(val){0};
-}};
+});
 
 } // namespaces
 
