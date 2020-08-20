@@ -70,6 +70,7 @@ endif()
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(test-libflow PRIVATE -Wall -Wextra -pedantic
         -Wno-missing-braces
+        -Wno-c++98-compat
         -fcoroutines-ts
         -ftemplate-backtrace-limit=0)
 endif()
