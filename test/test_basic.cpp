@@ -18,6 +18,7 @@ struct move_only {
     int i{};
 
     constexpr move_only() = default;
+    constexpr explicit move_only(int i) : i(i)  {}
     constexpr move_only(move_only&&) = default;
     constexpr move_only& operator=(move_only&&) = default;
 
