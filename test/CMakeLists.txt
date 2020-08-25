@@ -78,3 +78,6 @@ endif()
 if (MSVC)
     target_compile_options(test-libflow PRIVATE /await)
 endif()
+
+include(ParseAndAddCatchTests)
+ParseAndAddCatchTests(test-libflow)
