@@ -24,36 +24,36 @@ jobs:
       matrix:
         config:
           # GCC-7
-          - {
-            name: "Linux GCC 7 Debug (C++17)", artifact: "Linux.tar.xz",
-            os: ubuntu-latest,
-            build_type: Debug,
-            cc: "gcc-7", cxx: "g++-7",
-            cxx_standard: 17,
-          }
-          - {
-            name: "Linux GCC 7 Release (C++17)", artifact: "Linux.tar.xz",
-            os: ubuntu-latest,
-            build_type: RelWithDebInfo,
-            cc: "gcc-7", cxx: "g++-7",
-            cxx_standard: 17,
-          }
+          #- {
+          #  name: "Linux GCC 7 Debug (C++17)", artifact: "Linux.tar.xz",
+          #  os: ubuntu-latest,
+          #  build_type: Debug,
+          #  cc: "gcc-7", cxx: "g++-7",
+          #  cxx_standard: 17,
+          #}
+          #- {
+          #  name: "Linux GCC 7 Release (C++17)", artifact: "Linux.tar.xz",
+          #  os: ubuntu-latest,
+          #  build_type: RelWithDebInfo,
+          #  cc: "gcc-7", cxx: "g++-7",
+          #  cxx_standard: 17,
+          #}
 
           # GCC-8
-          - {
-            name: "Linux GCC 8 Debug (C++17)", artifact: "Linux.tar.xz",
-            os: ubuntu-latest,
-            build_type: Debug,
-            cc: "gcc-8", cxx: "g++-8",
-            cxx_standard: 17,
-          }
-          - {
-            name: "Linux GCC 8 Release (C++17)", artifact: "Linux.tar.xz",
-            os: ubuntu-latest,
-            build_type: RelWithDebInfo,
-            cc: "gcc-8", cxx: "g++-8",
-            cxx_standard: 17,
-          }
+          #- {
+          #  name: "Linux GCC 8 Debug (C++17)", artifact: "Linux.tar.xz",
+          #  os: ubuntu-latest,
+          #  build_type: Debug,
+          #  cc: "gcc-8", cxx: "g++-8",
+          #  cxx_standard: 17,
+          #}
+          #- {
+          #  name: "Linux GCC 8 Release (C++17)", artifact: "Linux.tar.xz",
+          #  os: ubuntu-latest,
+          #  build_type: RelWithDebInfo,
+          #  cc: "gcc-8", cxx: "g++-8",
+          #  cxx_standard: 17,
+          #}
 
           # GCC-9
           - {
