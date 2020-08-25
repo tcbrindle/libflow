@@ -86,15 +86,15 @@ jobs:
           }
 
           # Clang-5.0
-          - {
-            name: "Linux Clang 5.0 Debug (C++17 / libc++ / ASAN)", artifact: "Linux.tar.xz",
-            os: ubuntu-latest,
-            build_type: Debug,
-            cc: "clang-5.0", cxx: "clang++-5.0",
-            cxx_standard: 17,
-            cxx_asan: true,
-            libcxx: true
-          }
+          #- {
+          #  name: "Linux Clang 5.0 Debug (C++17 / libc++ / ASAN)", artifact: "Linux.tar.xz",
+          #  os: ubuntu-latest,
+          #  build_type: Debug,
+          #  cc: "clang-5.0", cxx: "clang++-5.0",
+          #  cxx_standard: 17,
+          #  cxx_asan: true,
+          #  libcxx: true
+          #}
           - {
             name: "Linux Clang 5.0 Debug (C++17 / ASAN)", artifact: "Linux.tar.xz",
             os: ubuntu-latest,
@@ -113,15 +113,15 @@ jobs:
           }
 
           # Clang-6.0
-          - {
-            name: "Linux Clang 6.0 Debug (C++17 / libc++ / ASAN)", artifact: "Linux.tar.xz",
-            os: ubuntu-latest,
-            build_type: Debug,
-            cc: "clang-6.0", cxx: "clang++-6.0",
-            cxx_standard: 17,
-            cxx_asan: true,
-            libcxx: true
-          }
+          #- {
+          #  name: "Linux Clang 6.0 Debug (C++17 / libc++ / ASAN)", artifact: "Linux.tar.xz",
+          #  os: ubuntu-latest,
+          #  build_type: Debug,
+          #  cc: "clang-6.0", cxx: "clang++-6.0",
+          #  cxx_standard: 17,
+          #  cxx_asan: true,
+          #  libcxx: true
+          #}
           - {
             name: "Linux Clang 6.0 Debug (C++17 / ASAN)", artifact: "Linux.tar.xz",
             os: ubuntu-latest,
