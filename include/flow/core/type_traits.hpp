@@ -28,9 +28,6 @@ using subflow_t = decltype(std::declval<F&>().subflow());
 
 using dist_t = std::make_signed_t<std::size_t>;
 
-template <typename T>
-class maybe;
-
 template <typename Derived>
 struct flow_base;
 
@@ -40,7 +37,10 @@ template <typename>
 inline constexpr bool is_maybe = false;
 
 template <typename T>
-inline constexpr bool is_maybe<maybe<T>> = true;
+inline constexpr bool is_maybe<optional<T>> = true;
+
+template <typename T>
+inline constexpr bool is_maybe<optional_ref<T>> = true;
 
 template <typename, typename = void>
 inline constexpr bool has_next = false;
