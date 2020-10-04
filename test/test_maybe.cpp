@@ -45,8 +45,10 @@ struct test {
 
     // Copy construction and copy-assignment
     static_assert(std::is_copy_constructible_v<M> == std::is_copy_constructible_v<T>);
-    static_assert(std::is_copy_assignable_v<M> == std::is_copy_constructible_v<T>); // NOTE!
-    static_assert(std::is_trivially_copyable_v<M> == std::is_reference_v<T>);
+    static_assert(std::is_copy_assignable_v<M> ==
+        (std::is_copy_assignable_v<T> || std::is_reference_v<T>));
+    //static_assert(std::is_trivially_copyable_v<M> ==
+    //    (std::is_trivially_copyable_v<T> || std::is_reference_v<T>));
 
     // Move construction and move-assignment
     static_assert(std::is_move_constructible_v<M>);
@@ -55,8 +57,9 @@ struct test {
         == std::is_trivially_move_constructible_v<T>);
     static_assert(std::is_move_assignable_v<M>);
     static_assert(std::is_nothrow_move_assignable_v<M>
-        == std::is_nothrow_move_constructible_v<T>);
-    static_assert(std::is_trivially_move_assignable_v<M> == std::is_reference_v<T>);
+        == (std::is_nothrow_move_assignable_v<T> || std::is_reference_v<T>));
+    static_assert(std::is_trivially_move_assignable_v<M> ==
+        (std::is_trivially_move_assignable_v<T> || std::is_reference_v<T>));
 
     // Destruction
     static_assert(std::is_trivially_destructible_v<M>
