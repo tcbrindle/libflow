@@ -158,6 +158,7 @@ struct stl_ra_range_adaptor : flow_base<stl_ra_range_adaptor<R>> {
     // I don't know, but let's try to support them in their foolish quest anyway
     template <typename T, std::size_t N>
     constexpr explicit stl_ra_range_adaptor(T(&&arr)[N])
+        : idx_back_(N)
     {
         for (std::size_t i = 0; i < N; i++) {
             rng_[i] = std::move(arr)[i];
@@ -166,8 +167,16 @@ struct stl_ra_range_adaptor : flow_base<stl_ra_range_adaptor<R>> {
 
     constexpr auto next() -> maybe<iter_reference_t<R>>
     {
-        if (idx_ < std::end(rng_) - std::begin(rng_)) {
+        if (idx_ < idx_back_) {
             return {std::begin(rng_)[idx_++]};
+        }
+        return {};
+    }
+
+    constexpr auto next_back() -> maybe<iter_reference_t<R>>
+    {
+        if (idx_back_ > idx_ ) {
+            return {std::begin(rng_)[--idx_back_]};
         }
         return {};
     }
@@ -207,7 +216,7 @@ struct stl_ra_range_adaptor : flow_base<stl_ra_range_adaptor<R>> {
 
     [[nodiscard]] constexpr auto size() const -> dist_t
     {
-        return (std::end(rng_) - std::begin(rng_)) - idx_;
+        return idx_back_ - idx_;
     }
 
 private:
@@ -216,6 +225,7 @@ private:
 
     R rng_{};
     dist_t idx_ = 0;
+    dist_t idx_back_ = std::distance(std::begin(rng_), std::end(rng_));
 };
 
 template <typename R, typename = std::enable_if_t<detail::is_stl_range<R>>>

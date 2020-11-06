@@ -26,6 +26,10 @@ struct of : flow_base<of<T, N>> {
         return arr_.next();
     }
 
+    constexpr auto next_back() -> maybe<T&> {
+        return arr_.next_back();
+    }
+
     constexpr auto subflow() &
     {
         return arr_.subflow();
