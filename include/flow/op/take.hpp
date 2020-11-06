@@ -34,6 +34,15 @@ struct take_adaptor : flow_base<take_adaptor<Flow>> {
         return {};
     }
 
+    template <bool B = is_reversible_flow<Flow> && is_sized_flow<Flow>>
+    constexpr auto next_back() -> std::enable_if_t<B, next_t<Flow>>
+    {
+        if (size() > 0) {
+            return flow_.next_back();
+        }
+        return {};
+    }
+
     template <typename F = Flow,
               typename = std::enable_if_t<is_sized_flow<F> || is_infinite_flow<F>>>
     [[nodiscard]] constexpr auto size() const -> dist_t
