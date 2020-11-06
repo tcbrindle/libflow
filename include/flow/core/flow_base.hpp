@@ -279,6 +279,16 @@ public:
     template <typename Flowable, typename Cmp = equal_to>
     constexpr auto equal(Flowable&& flowable, Cmp cmp = Cmp{}) -> bool;
 
+    /// Given a reversible flow, returns a new flow which processes items
+    /// from back to front.
+    ///
+    /// The returned adaptor effectively swaps the actions of the `next()` and
+    /// `next_back()` functions.
+    ///
+    /// @return A new flow which runs in the opposite direction
+    constexpr auto reverse() &&;
+
+
     /// Consumes the flow, returning a new flow which lazily invokes the given
     /// callable for each item as it is processed.
     ///
