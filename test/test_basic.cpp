@@ -134,20 +134,3 @@ static_assert(test_for_macro_iteration<int>());
 static_assert(test_for_macro_iteration<move_only>());
 
 }
-
-TEST_CASE("modifying a container while iterating", "[flow.basic]")
-{
-    std::vector<int> vec{0};
-    vec.shrink_to_fit(); // force push_back() to resize
-    int val = 1;
-
-    FLOW_FOR(int i, flow::from(vec)) {
-        (void) i; // avoid unused variable warning
-        if (val < 5) {
-            vec.push_back(val++);
-            vec.shrink_to_fit();
-        }
-    }
-
-    REQUIRE((vec == std::vector{0, 1, 2, 3, 4}));
-}
