@@ -94,6 +94,20 @@ inline constexpr bool is_sized_flow = is_flow<F> && detail::has_size<F>;
 template <typename F>
 inline constexpr bool is_infinite_flow = is_flow<F> && detail::is_infinite<F>;
 
+namespace detail {
+
+template <typename, typename = void>
+inline constexpr bool has_next_back = false;
+
+template <typename T>
+inline constexpr bool has_next_back<T, std::enable_if_t<
+    std::is_same_v<next_t<T>, decltype(std::declval<T>().next_back())>>> = true;
+
+}
+
+template <typename F>
+inline constexpr bool is_reversible_flow = is_flow<F> && detail::has_next_back<F>;
+
 } // namespace flow
 
 #endif
