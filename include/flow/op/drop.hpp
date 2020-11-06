@@ -37,6 +37,16 @@ struct drop_adaptor : flow_base<drop_adaptor<Flow>>
     }
 
     template <typename F = Flow>
+    constexpr auto next_back() -> std::enable_if_t<
+        is_reversible_flow<F> && is_sized_flow<F>, next_t<Flow>>
+    {
+        if (size() > 0) {
+            return flow_.next_back();
+        }
+        return {};
+    }
+
+    template <typename F = Flow>
     constexpr auto size() const -> std::enable_if_t<is_sized_flow<F>, dist_t>
     {
         return max(flow_.size() - count_, dist_t{0});
