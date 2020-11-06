@@ -25,6 +25,16 @@ constexpr bool test()
         }
     }
 
+    {
+        auto in = std::array{1, 2, 3, 4, 5};
+        auto twice = [](int i) { return i + i; };
+        auto out = std::array{10, 8, 6, 4, 2};
+
+        if (!flow::reverse(in).map(twice).equal(out)) {
+            return false;
+        }
+    }
+
     return true;
 }
 static_assert(test());
