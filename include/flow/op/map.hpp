@@ -49,6 +49,12 @@ struct map_adaptor : flow_base<map_adaptor<Flow, Func>> {
         }
     }
 
+    template <bool B = is_reversible_flow<Flow>>
+    constexpr auto next_back() -> std::enable_if_t<B, next_t<Flow>>
+    {
+        return flow_.next_back().map(func_);
+    }
+
     template <typename F = Flow>
     constexpr auto subflow() & -> map_adaptor<subflow_t<F>, function_ref<Func>>
     {
