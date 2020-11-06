@@ -3,6 +3,10 @@
 
 #include "catch.hpp"
 
+#include <list>
+#include <map>
+#include <set>
+
 namespace {
 
 constexpr bool test()
@@ -45,6 +49,35 @@ TEST_CASE("reverse() works for vectors")
 
     REQUIRE((flow::from(vec).reverse().to_vector() ==
              std::vector<int>{5, 4, 3, 2, 1}));
+}
+
+TEST_CASE("reverse() works for lists")
+{
+    auto list = std::list<int>{1, 2, 3, 4, 5};
+
+    REQUIRE(flow::reverse(list).equal(flow::of{5, 4, 3, 2, 1}));
+}
+
+TEST_CASE("reverse() works for sets")
+{
+    const auto set = std::set{3, 2, 5, 4, 1};
+
+    REQUIRE(flow::reverse(set).equal(flow::of{5, 4, 3, 2, 1}));
+}
+
+TEST_CASE("reverse() works for maps")
+{
+    using namespace std::string_view_literals;
+
+    const auto map = std::map<int, std::string>{
+        {1, "one"},
+        {2, "two"},
+        {3, "three"}
+    };
+
+    REQUIRE(flow::reverse(map).keys().equal(flow::of{3, 2, 1}));
+
+    REQUIRE(flow::values(map).reverse().equal(flow::of{"three"sv, "two"sv, "one"sv}));
 }
 
 }

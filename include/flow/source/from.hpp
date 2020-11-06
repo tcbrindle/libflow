@@ -37,6 +37,10 @@ inline constexpr bool is_fwd_stl_range =
     std::is_base_of_v<std::forward_iterator_tag, iter_category_t<R>>;
 
 template <typename R>
+inline constexpr bool is_bidir_stl_range =
+    std::is_base_of_v<std::bidirectional_iterator_tag, iter_category_t<R>>;
+
+template <typename R>
 inline constexpr bool is_random_access_stl_range =
     std::is_base_of_v<std::random_access_iterator_tag, iter_category_t<R>>;
 
@@ -148,6 +152,53 @@ private:
 };
 
 template <typename R>
+struct stl_bidir_range_adaptor : flow_base<stl_bidir_range_adaptor<R>> {
+
+    constexpr explicit stl_bidir_range_adaptor(R&& rng)
+        : rng_(std::move(rng))
+    {}
+
+    constexpr auto next() -> maybe<iter_reference_t<R>>
+    {
+        if (first_ != last_) {
+            return {*first_++};
+        }
+        return {};
+    }
+
+    constexpr auto next_back() -> maybe<iter_reference_t<R>>
+    {
+        if (first_ != last_) {
+            return {*--last_};
+        }
+        return {};
+    }
+
+    template <typename C>
+    constexpr auto to() &&
+    {
+        return C(first_, last_);
+    }
+
+    constexpr auto subflow() &
+    {
+        if  constexpr (is_range_ref<R>) {
+            return *this;
+        } else {
+            auto s = stl_bidir_range_adaptor<range_ref<R>>(rng_);
+            s.first_ = first_;
+            s.last_ = last_;
+            return s;
+        }
+    }
+
+private:
+    R rng_;
+    iterator_t<R> first_ = std::begin(rng_);
+    iterator_t<R> last_ = std::end(rng_);
+};
+
+template <typename R>
 struct stl_ra_range_adaptor : flow_base<stl_ra_range_adaptor<R>> {
 
     template <typename RR = R, std::enable_if_t<!std::is_array_v<RR>, int> = 0>
@@ -237,6 +288,8 @@ constexpr auto to_flow(R&& range)
 
     if constexpr (detail::is_random_access_stl_range<R>) {
         return detail::stl_ra_range_adaptor<rng_t>{FLOW_FWD(range)};
+    } else if constexpr (detail::is_bidir_stl_range<R>) {
+        return detail::stl_bidir_range_adaptor<rng_t>{FLOW_FWD(range)};
     } else if constexpr (detail::is_fwd_stl_range<R>) {
         return detail::stl_fwd_range_adaptor<rng_t>{FLOW_FWD(range)};
     } else {
