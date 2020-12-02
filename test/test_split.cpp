@@ -32,6 +32,25 @@ constexpr bool test_split()
     }
 
     {
+        auto f = flow::c_str("   Hello world another   test   ").split(' ');
+
+        if (f.subflow().count() != 4) {
+            return false;
+        }
+
+        bool b =
+            f.next()->equal("Hello"sv) &&
+                f.next()->equal("world"sv) &&
+                f.next()->equal("another"sv) &&
+                f.next()->equal("test"sv) &&
+                !f.next().has_value();
+
+        if (!b) {
+            return false;
+        }
+    }
+
+    {
         auto f = flow::split(L"hello____again"sv, L'_');
 
         if (f.subflow().count() != 2) {
