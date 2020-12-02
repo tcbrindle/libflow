@@ -24,7 +24,19 @@ template <typename Derived>
 template <typename D>
 constexpr auto flow_base<Derived>::split(value_t<D> delim) &&
 {
-    return consume().group_by(flow::pred::eq(std::move(delim))).stride(2);
+    // So, this works, kinda, but sucks.
+    // What we do is split on the delimiter, and then skip those groups
+    // which contain the delimiter
+    // Doing this with a filter would be too slow, so what we do is inspect
+    // the first group (to see whether it was a delim or not), possibly
+    // drop that, then continue serving up every second group.
+    // I mean, it's cool that we can do this, but a dedicated adaptor would
+    // be much better.
+    return consume().group_by(flow::pred::eq(std::move(delim)))
+            .drop_while([delim](auto f) {
+                assert(f.subflow().count() > 0);
+                return *f.subflow().next() == delim; })
+            .stride(2);
 }
 
 }
