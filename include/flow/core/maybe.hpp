@@ -39,6 +39,7 @@ public:
     using base::operator*;
     using base::operator->;
     using base::value;
+    using base::value_or;
     using base::has_value;
     using base::reset;
 
@@ -73,6 +74,10 @@ private:
 
 template <typename T>
 struct optional_ref {
+private:
+    T* ptr_ = nullptr;
+
+public:
     using value_type = T&;
 
     optional_ref() = default;
@@ -93,6 +98,13 @@ struct optional_ref {
         return *ptr_;
     }
 
+    template <typename U>
+    constexpr auto value_or(U&& arg) const
+        -> decltype(ptr_ ? *ptr_ : FLOW_FWD(arg))
+    {
+        return ptr_ ? *ptr_ : FLOW_FWD(arg);
+    }
+
     constexpr auto reset() { ptr_ = nullptr; }
 
     constexpr auto has_value() const -> bool { return ptr_ != nullptr; }
@@ -106,9 +118,6 @@ struct optional_ref {
         }
         return {};
     }
-
-private:
-    T* ptr_ = nullptr;
 };
 
 } // namespace flow
