@@ -288,6 +288,12 @@ public:
     /// @return A new flow which runs in the opposite direction
     constexpr auto reverse() &&;
 
+    template <typename Func,
+              typename D = Derived,
+              typename Init = value_t<D>>
+    constexpr auto scan(Func func, Init init = Init{}) &&;
+
+    constexpr auto partial_sum() &&;
 
     /// Consumes the flow, returning a new flow which lazily invokes the given
     /// callable for each item as it is processed.
