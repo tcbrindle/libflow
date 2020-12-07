@@ -28,7 +28,7 @@ struct async : flow_base<async<T>>
             return std::experimental::suspend_always{};
         };
 
-        auto final_suspend() {
+        auto final_suspend() noexcept {
             return std::experimental::suspend_always{};
         }
 
