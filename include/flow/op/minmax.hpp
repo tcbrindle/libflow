@@ -48,11 +48,8 @@ template <typename D>
 template <typename Cmp>
 constexpr auto flow_base<D>::min(Cmp cmp)
 {
-    // Yes, this is crazy. Sorrynotsorry.
-    return derived().next().map([this, &cmp] (auto&& init) {
-        return *derived().fold([&cmp](auto init, auto&& item) -> next_t<D> {
-            return invoke(cmp, item, *init) ? next_t<D>{FLOW_FWD(item)} : std::move(init);
-        }, next_t<D>(FLOW_FWD(init)));
+    return derived().fold_first([&cmp](auto min, auto&& item) {
+        return invoke(cmp, item, min) ? FLOW_FWD(item) : std::move(min);
     });
 }
 
@@ -60,10 +57,8 @@ template <typename D>
 template <typename Cmp>
 constexpr auto flow_base<D>::max(Cmp cmp)
 {
-    return derived().next().map([this, &cmp] (auto&& init) {
-      return *derived().fold([&cmp](auto init, auto&& item) -> next_t<D> {
-        return !invoke(cmp, item, *init) ? next_t<D>{FLOW_FWD(item)} : std::move(init);
-      }, next_t<D>(FLOW_FWD(init)));
+    return derived().fold_first([&cmp](auto max, auto&& item) {
+        return !invoke(cmp, item, max) ? FLOW_FWD(item) : std::move(max);
     });
 }
 
