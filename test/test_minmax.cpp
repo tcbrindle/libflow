@@ -7,7 +7,20 @@
 
 namespace {
 
-using int_pair = std::pair<int, int>;
+// Sigh, std::pair::operator= isn't constexpr?!
+struct int_pair {
+    int first, second;
+
+    friend constexpr bool operator==(const int_pair& lhs, const int_pair& rhs)
+    {
+        return lhs.first == rhs.first && lhs.second && rhs.second;
+    }
+
+    friend constexpr bool operator!=(const int_pair& lhs, const int_pair& rhs)
+    {
+        return !(lhs == rhs);
+    }
+};
 
 constexpr auto compare_second = [](auto const& p, auto const& q) {
     return p.second < q.second;
@@ -122,8 +135,8 @@ TEST_CASE("max", "[flow.max]")
  * Minmax tests
  */
 
-//static_assert(flow::from(pairs).minmax(compare_second).value() ==
-//              flow::minmax_result<int_pair>{int_pair{2, -2}, int_pair{5, 99}});
+static_assert(flow::from(pairs).minmax(compare_second).value() ==
+              flow::minmax_result<int_pair>{int_pair{2, -2}, int_pair{5, 99}});
 
 constexpr bool test_minmax()
 {

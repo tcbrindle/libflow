@@ -27,9 +27,22 @@ struct fold_op {
     }
 };
 
+struct fold_first_op {
+    template <typename Flowable, typename Func>
+    constexpr auto operator()(Flowable&& flowable, Func func) const
+    {
+        static_assert(is_flowable<Flowable>,
+                      "First argument to flow::fold_first must be Flowable");
+        return flow::from(FLOW_FWD(flowable)).fold_first(std::move(func));
+    }
+
+};
+
 } // namespace detail
 
 inline constexpr auto fold = detail::fold_op{};
+
+inline constexpr auto fold_first = detail::fold_first_op{};
 
 template <typename Derived>
 template <typename Func, typename Init>
@@ -60,6 +73,20 @@ constexpr auto flow_base<Derived>::fold(Func func)
             "This flow's value type is not default constructible. "
             "Use the fold(function, initial_value) overload instead");
     return consume().fold(std::move(func), value_t<Derived>{});
+}
+
+template <typename Derived>
+template <typename Func>
+constexpr auto flow_base<Derived>::fold_first(Func func)
+{
+    using return_t = maybe<value_t<Derived>>;
+
+    auto val = derived().next();
+    if (!val) {
+        return return_t{};
+    }
+
+    return return_t{derived().fold(std::move(func), *std::move(val))};
 }
 
 }

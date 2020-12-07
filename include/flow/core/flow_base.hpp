@@ -132,6 +132,17 @@ public:
     template <typename Func>
     constexpr auto fold(Func func);
 
+    /// Performs a left fold using `func`, passing the first element of the
+    /// flow as the initial value of the accumulator.
+    ///
+    /// If the flow is empty, returns an empty `maybe`. Otherwise, returns a
+    /// `maybe` containing the accumulated result.
+    ///
+    /// @param func Callable with a signature compatible with `(value_t<Flow>, item_t<Flow>) -> value_t<Flow>`
+    /// @returns The accumulated value of the fold, wrapped in a `flow::maybe`
+    template <typename Func>
+    constexpr auto fold_first(Func func);
+
     /// Exhausts the flow, applying the given function to each element
     ///
     /// @param func A unary callable accepting this flow's item type
