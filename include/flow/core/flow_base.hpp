@@ -344,11 +344,11 @@ public:
     /// `map([](auto&& item) -> decltype(auto) { return *forward(item); })`
     ///
     /// @warning This function **does not** check whether the items are
-    /// non-null (or equivalent) before dereferencing. See `filter_deref()` for
+    /// non-null (or equivalent) before dereferencing. See `deref()` for
     /// a safer, checking version.
     ///
     /// @return An adaptor that dereferences each item of the original flow
-    constexpr auto deref() &&;
+    constexpr auto unchecked_deref() &&;
 
     /// Consumes the flow, returning an adaptor which copies every item.
     ///

@@ -42,16 +42,16 @@ constexpr auto flow_base<D>::as() &&
     });
 }
 
-// deref()
+// unchecked_deref()
 
-inline constexpr auto deref = [](auto&& flowable) {
+inline constexpr auto unchecked_deref = [](auto&& flowable) {
     static_assert(is_flowable<decltype(flowable)>,
-                  "Argument to flow::deref() must be a Flowable type");
-    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).deref();
+                  "Argument to flow::unchecked_deref() must be a Flowable type");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).unchecked_deref();
 };
 
 template <typename D>
-constexpr auto flow_base<D>::deref() &&
+constexpr auto flow_base<D>::unchecked_deref() &&
 {
     auto deref = [](auto&& val) -> decltype(*FLOW_FWD(val)) {
         return *FLOW_FWD(val);

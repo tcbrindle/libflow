@@ -52,7 +52,7 @@ constexpr bool test_group_by() {
         flow::from(arr)
             .group_by(not flow::pred::negative)
             .map([](auto f) { return f.next(); })
-            .deref()
+            .unchecked_deref()
             .output_to(have.begin());
 
         for (int i = 0; i < 3; i++) {

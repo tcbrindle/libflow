@@ -40,7 +40,7 @@ constexpr bool test_iota_bounded()
     {
         std::array arr{1, 2, 3, 4, 5};
 
-        auto f = flow::iota(arr.begin(), arr.end()).deref();
+        auto f = flow::iota(arr.begin(), arr.end()).unchecked_deref();
 
         if (f.size() != 5) {
             return false;

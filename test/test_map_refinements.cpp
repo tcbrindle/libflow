@@ -91,16 +91,16 @@ TEST_CASE("flow::as()", "[flow.as]")
 }
 
 /*
- * deref()
+ * unchecked_deref()
  */
 
-constexpr bool test_deref()
+constexpr bool test_unchecked_deref()
 {
     int a = 1, b = 2, c = 3;
 
     // Test dereffing pointers
     {
-        auto f = flow::of(&a, &b, &c).deref();
+        auto f = flow::of(&a, &b, &c).unchecked_deref();
 
         if (not f.equal(flow::of(1, 2, 3))) {
             return false;
@@ -111,7 +111,7 @@ constexpr bool test_deref()
     {
         std::array<flow::maybe<int&>, 3> arr{a, b, c};
 
-        auto f = flow::deref(arr);
+        auto f = flow::unchecked_deref(arr);
 
         bool success =
             &f.next().value() == &a  &&
@@ -127,14 +127,14 @@ constexpr bool test_deref()
     return true;
 }
 #if !COMPILER_IS_MSVC
-static_assert(test_deref());
+static_assert(test_unchecked_deref());
 #endif
 
-constexpr bool test_deref_optional()
+constexpr bool test_unchecked_deref_optional()
 {
     auto arr = std::array<std::optional<int>, 3>{1, 2, 3};
 
-    auto f = flow::deref(arr);
+    auto f = flow::unchecked_deref(arr);
 
     return f.next().value() == 1 &&
             f.next().value() == 2 &&
@@ -143,13 +143,13 @@ constexpr bool test_deref_optional()
 }
 // FIXME: GCC doesn't like this for some reason (but Clang is fine)
 #if !COMPILER_IS_GCC
-static_assert(test_deref_optional());
+static_assert(test_unchecked_deref_optional());
 #endif
 
-TEST_CASE("flow.deref", "[flow.deref]")
+TEST_CASE("flow.unchecked_deref", "[flow.unchecked_deref]")
 {
-    REQUIRE(test_deref());
-    REQUIRE(test_deref_optional());
+    REQUIRE(test_unchecked_deref());
+    REQUIRE(test_unchecked_deref_optional());
 
     // Test dereffing unique_ptrs
     {
@@ -159,7 +159,7 @@ TEST_CASE("flow.deref", "[flow.deref]")
             std::make_unique<int>(3)
         };
 
-        REQUIRE(flow::deref(ptrs).equal(flow::of(1, 2, 3)));
+        REQUIRE(flow::unchecked_deref(ptrs).equal(flow::of(1, 2, 3)));
     }
 
     // Test dereffing shared pointers
@@ -170,7 +170,7 @@ TEST_CASE("flow.deref", "[flow.deref]")
             std::make_shared<int>(3)
         };
 
-        REQUIRE(flow::deref(ptrs).equal(flow::of(1, 2, 3)));
+        REQUIRE(flow::unchecked_deref(ptrs).equal(flow::of(1, 2, 3)));
     }
 }
 
