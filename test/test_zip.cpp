@@ -80,7 +80,7 @@ constexpr bool test_enumerate()
     int counter = 0;
 
     FLOW_FOR(auto m, f) {
-        auto [item, idx] = m;
+        auto [idx, item] = m;
 
         if (not (item == arr[counter] && idx== counter)) {
             return false;

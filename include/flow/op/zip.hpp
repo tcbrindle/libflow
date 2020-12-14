@@ -53,7 +53,7 @@ constexpr auto flow_base<D>::zip(Flowables&&... flowables) &&
 template <typename D>
 constexpr auto flow_base<D>::enumerate() &&
 {
-    return consume().zip(flow::ints());
+    return flow::ints().zip(consume());
 }
 
 }
