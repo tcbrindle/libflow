@@ -64,6 +64,19 @@ constexpr bool test_iota_bounded()
         }
     }
 
+    // Reversing
+    {
+        auto f = flow::iota(0, 5).reverse();
+
+        if (f.size() != 5) {
+            return false;
+        }
+
+        if (!f.equal(std::array{4, 3, 2, 1, 0})) {
+            return false;
+        }
+    }
+
     return true;
 }
 #if !COMPILER_IS_MSVC
