@@ -14,6 +14,7 @@
 #include <flow/op/count.hpp>
 #include <flow/op/count_if.hpp>
 #include <flow/op/cycle.hpp>
+#include <flow/op/deref.hpp>
 #include <flow/op/drop.hpp>
 #include <flow/op/drop_while.hpp>
 #include <flow/op/equal.hpp>
