@@ -29,6 +29,7 @@ add_executable(test-libflow
     test_count.cpp
     test_count_if.cpp
     test_cycle.cpp
+    test_deref.cpp
     test_drop.cpp
     test_drop_while.cpp
     test_equal.cpp

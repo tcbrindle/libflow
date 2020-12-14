@@ -392,6 +392,24 @@ public:
     template <typename Pred>
     constexpr auto filter(Pred pred) &&;
 
+    /// Consumes the flow, returning an adaptor which dereferences each item
+    /// using unary `operator*`.
+    ///
+    /// This is useful when you have a flow of a dereferenceable type (for
+    /// example a pointer, a `flow::maybe` or a `std::optional`), and want a
+    /// flow of (references to) the values they contain.
+    ///
+    /// Unlike `unchecked_deref()`, this adaptor first attempts to check whether
+    /// item contains a value, using a static_cast to bool. If the check returns
+    /// false, the item is skipped.
+    ///
+    /// Equivalent to:
+    ///
+    /// `filter([](const auto& i) { return static_cast<bool>(i); }.unchecked_deref()`
+    ///
+    /// @return An adaptor that dereferences each item of the original flow
+    constexpr auto deref() &&;
+
     /// Consumes the flow, returning a new flow which skips the first `count` items.
     ///
     /// @param count The number of items to skip
