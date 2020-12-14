@@ -538,9 +538,9 @@ public:
     template <typename... Flowables>
     constexpr auto zip(Flowables&&... flowables) &&;
 
-    /// Adapts the flow so that it returns (item, index) pairs.
+    /// Adapts the flow so that it returns (index, item) pairs.
     ///
-    /// Equivalent to zip(flow::ints());
+    /// Equivalent to flow::ints().zip(*this)
     ///
     /// @return A new enumerate adaptor
     constexpr auto enumerate() &&;
