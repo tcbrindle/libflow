@@ -15,24 +15,24 @@ int main()
     {
         constexpr auto nums = std::array{1, 0, 0, 0, 1, 0, 0, 0, 1};
         constexpr auto k = 2;
-        static_assert(k_length_apart(nums, k));
+        assert(k_length_apart(nums, k));
     }
 
     {
         constexpr auto nums = std::array{1, 0, 0, 1, 0, 1};
         constexpr auto k = 2;
-        static_assert(not k_length_apart(nums, k));
+        assert(not k_length_apart(nums, k));
     }
 
     {
         constexpr auto nums = std::array{1, 1, 1, 1, 1};
         constexpr auto k = 0;
-        static_assert(k_length_apart(nums, k));
+        assert(k_length_apart(nums, k));
     }
 
     {
         constexpr auto nums = std::array{0, 1, 0, 1};
         constexpr auto k = 1;
-        static_assert(k_length_apart(nums, k));
+        assert(k_length_apart(nums, k));
     }
 }
