@@ -272,8 +272,6 @@ TEST_CASE("flow::move()", "[flow.move]")
 /*
  * elements() tests
  */
-// FIXME FIXME: Why doesn't MSVC like this at all?
-#if !COMPILER_IS_MSVC
 constexpr bool test_elements()
 {
     using triple = std::tuple<int, int, int>;
@@ -286,7 +284,9 @@ constexpr bool test_elements()
 
     return flow::elements<2>(arr).equal(flow::of{3, 6, 9});
 }
+#if !COMPILER_IS_MSVC
 static_assert(test_elements());
+#endif
 
 TEST_CASE("elements()", "[flow.elements]")
 {
@@ -309,6 +309,6 @@ TEST_CASE("keys()/values()", "[flow.keys] [flow.values]")
 
     REQUIRE((flow::values(map).to_vector() == std::vector<std::string>{"one", "two", "three"}));
 }
-#endif
+
 
 }

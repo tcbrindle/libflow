@@ -2,6 +2,7 @@
 #include <flow.hpp>
 
 #include "catch.hpp"
+#include "macros.hpp"
 
 #include <list>
 #include <map>
@@ -41,7 +42,9 @@ constexpr bool test()
 
     return true;
 }
+#if !COMPILER_IS_MSVC
 static_assert(test());
+#endif
 
 TEST_CASE("reverse() works for vectors")
 {
