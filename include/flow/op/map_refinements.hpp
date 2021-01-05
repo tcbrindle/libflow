@@ -114,7 +114,18 @@ struct elements_op {
     }
 };
 
-}
+// This should be a lambda inside elements<N>(), but MSVC doesn't like it at all
+template <std::size_t N>
+struct tuple_getter {
+    template <typename Tuple>
+    constexpr auto operator()(Tuple&& tup) const
+        -> remove_rref_t<decltype(std::get<N>(FLOW_FWD(tup)))>
+    {
+        return std::get<N>(FLOW_FWD(tup));
+    }
+};
+
+} // namespace detail
 
 template <std::size_t N>
 inline constexpr auto elements = detail::elements_op<N>{};
@@ -123,13 +134,10 @@ template <typename D>
 template <std::size_t N>
 constexpr auto flow_base<D>::elements() &&
 {
-    auto get_fn = [](auto&& val) -> remove_rref_t<decltype(std::get<N>(FLOW_FWD(val)))> {
-        return std::get<N>(FLOW_FWD(val));
-    };
-    static_assert(std::is_invocable_v<decltype(get_fn), item_t<D>>,
+    static_assert(std::is_invocable_v<detail::tuple_getter<N>&, item_t<D>>,
                   "Flow's item type is not tuple-like");
 
-    return consume().map(std::move(get_fn));
+    return consume().map(detail::tuple_getter<N>{});
 }
 
 // keys

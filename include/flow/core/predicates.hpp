@@ -39,9 +39,9 @@ struct cmp {
 
 /// Given a predicate, returns a new predicate with the condition reversed
 inline constexpr auto not_ = [](auto&& pred) {
-    return detail::predicate{[p = FLOW_FWD(pred)] (auto const&... args) {
+    return detail::make_predicate([p = FLOW_FWD(pred)] (auto const&... args) {
         return !invoke(p, FLOW_FWD(args)...);
-    }};
+    });
 };
 
 /// Returns a new predicate which is satisifed only if both the given predicates
