@@ -230,12 +230,68 @@ jobs:
 
           # Clang-10
           - {
+            name: "Linux Clang 10 Debug (C++17 / libc++ / ASAN)", artifact: "Linux.tar.xz",
+            os: ubuntu-latest,
+            build_type: Debug,
+            cc: "clang-10", cxx: "clang++-10",
+            cxx_standard: 17,
+            cxx_asan: true,
+            libcxx: true,
+          }
+          - {
+            name: "Linux Clang 10 Release (C++17 / libc++)", artifact: "Linux.tar.xz",
+            os: ubuntu-latest,
+            build_type: RelWithDebInfo,
+            cc: "clang-10", cxx: "clang++-10",
+            cxx_standard: 17,
+            libcxx: true,
+          }
+          - {
+            name: "Linux Clang 10 Debug (C++20 / libc++ / ASAN)", artifact: "Linux.tar.xz",
+            os: ubuntu-latest,
+            build_type: Debug,
+            cc: "clang-10", cxx: "clang++-10",
+            cxx_standard: 20,
+            cxx_asan: true,
+            libcxx : true,
+          }
+          - {
+            name: "Linux Clang 10 Release (C++20 / libc++)", artifact: "Linux.tar.xz",
+            os: ubuntu-latest,
+            build_type: RelWithDebInfo,
+            cc: "clang-10", cxx: "clang++-10",
+            cxx_standard: 20,
+            libcxx: true,
+          }
+          - {
+            name: "Linux Clang 10 Debug (C++17 / ASAN)", artifact: "Linux.tar.xz",
+            os: ubuntu-latest,
+            build_type: Debug,
+            cc: "clang-10", cxx: "clang++-10",
+            cxx_standard: 17,
+            cxx_asan: true,
+          }
+          - {
+            name: "Linux Clang 10 Release (C++17)", artifact: "Linux.tar.xz",
+            os: ubuntu-latest,
+            build_type: RelWithDebInfo,
+            cc: "clang-10", cxx: "clang++-10",
+            cxx_standard: 17,
+          }
+          - {
             name: "Linux Clang 10 Debug (C++20 / ASAN)", artifact: "Linux.tar.xz",
             os: ubuntu-latest,
             build_type: Debug,
             cc: "clang-10", cxx: "clang++-10",
             cxx_standard: 20,
             cxx_asan: true,
+          }
+          - {
+            name: "Linux Clang 10 Release (C++20)", artifact: "Linux.tar.xz",
+            os: ubuntu-latest,
+            build_type: RelWithDebInfo,
+            cc: "clang-10", cxx: "clang++-10",
+            cxx_standard: 20,
           }
 
           # AppleClang
