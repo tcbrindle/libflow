@@ -4,6 +4,8 @@
 #include "catch.hpp"
 #include "macros.hpp"
 
+#include <optional>
+
 namespace {
 
 constexpr bool test_deref()

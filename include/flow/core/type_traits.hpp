@@ -31,16 +31,16 @@ using dist_t = std::make_signed_t<std::size_t>;
 template <typename Derived>
 struct flow_base;
 
+template <typename>
+class maybe;
+
 namespace detail {
 
 template <typename>
 inline constexpr bool is_maybe = false;
 
 template <typename T>
-inline constexpr bool is_maybe<optional<T>> = true;
-
-template <typename T>
-inline constexpr bool is_maybe<optional_ref<T>> = true;
+inline constexpr bool is_maybe<maybe<T>> = true;
 
 template <typename, typename = void>
 inline constexpr bool has_next = false;
