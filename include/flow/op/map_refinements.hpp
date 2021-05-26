@@ -93,7 +93,7 @@ template <typename D>
 constexpr auto flow_base<D>::move() && -> decltype(auto)
 {
     if constexpr (std::is_lvalue_reference_v<item_t<D>>) {
-        return consume().template as<std::remove_reference_t<item_t<D>>&&>();
+        return consume().map([](auto& item) { return std::move(item); });
     } else {
         return consume();
     }

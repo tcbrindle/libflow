@@ -6,6 +6,7 @@
 #include "macros.hpp"
 
 #include <map>
+#include <optional>
 
 namespace {
 
