@@ -558,6 +558,12 @@ public:
     template <typename Func, typename... Flowables>
     constexpr auto zip_with(Func func, Flowables&&... flowables) &&;
 
+    template <typename Func, typename... Flowables>
+    constexpr auto cartesian_product_with(Func func, Flowables&&... flowables) &&;
+
+    template <typename... Flowables>
+    constexpr auto cartesian_product(Flowables&&... flowables) &&;
+
     /// Turns a flow into a flow-of-flows, where each inner flow ("group") is
     /// delimited by the return value of `func`.
     ///

@@ -7,6 +7,8 @@
 #include <flow/core/predicates.hpp>
 
 #include <flow/op/all_any_none.hpp>
+#include <flow/op/cartesian_product.hpp>
+#include <flow/op/cartesian_product_with.hpp>
 #include <flow/op/chain.hpp>
 #include <flow/op/chunk.hpp>
 #include <flow/op/collect.hpp>
