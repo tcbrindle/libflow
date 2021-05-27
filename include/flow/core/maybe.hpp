@@ -363,28 +363,28 @@ public:
     // I really want "deducing this"...
     template <typename U>
     constexpr auto value_or(U&& arg) &
-        -> decltype(has_value() ? **this : FLOW_FWD(arg))
+        -> decltype(has_value() ? std::declval<T&>() : FLOW_FWD(arg))
     {
         return has_value() ? **this : FLOW_FWD(arg);
     }
 
     template <typename U>
     constexpr auto value_or(U&& arg) const&
-        -> decltype(has_value() ? **this : FLOW_FWD(arg))
+        -> decltype(has_value() ? std::declval<T const&>() : FLOW_FWD(arg))
     {
         return has_value() ? **this : FLOW_FWD(arg);
     }
 
     template <typename U>
     constexpr auto value_or(U&& arg) &&
-        -> decltype(has_value() ? *std::move(*this) : FLOW_FWD(arg))
+        -> decltype(has_value() ? std::declval<T&&>() : FLOW_FWD(arg))
     {
         return has_value() ? *std::move(*this) : FLOW_FWD(arg);
     }
 
     template <typename U>
     constexpr auto value_or(U&& arg) const&&
-        -> decltype(has_value() ? *std::move(*this) : FLOW_FWD(arg))
+        -> decltype(has_value() ? std::declval<T const&&>() : FLOW_FWD(arg))
     {
         return has_value() ? *std::move(*this) : FLOW_FWD(arg);
     }

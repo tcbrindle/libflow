@@ -6,11 +6,13 @@
 
 constexpr bool test_cartesian_product3()
 {
+    using namespace std::string_view_literals;
+
     auto const arr = std::array{10, 20};
     auto ints = flow::ints().take(2);
-    std::string_view strs[] = { "one", "two"};
+    auto strs = flow::of{ "one"sv, "two"sv};
 
-    auto prod = flow::cartesian_product(arr, std::move(ints), strs);
+    auto prod = flow::cartesian_product(arr, std::move(ints), std::move(strs));
 
     using output_t = std::tuple<int const&, flow::dist_t, std::string_view&>;
 

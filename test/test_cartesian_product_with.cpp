@@ -12,8 +12,8 @@ constexpr bool test_cartesian_product_with3()
     auto sum = [](auto&&... args) { return (FLOW_FWD(args) + ... ); };
 
     std::array longs{100L, 200L};
-    auto ints = flow::ints().take(2);
-    short const shorts[] = { 5, 10 };
+    auto ints = flow::iota(0).take(2);
+    std::array<short,2> const shorts = { 5, 10 };
 
     auto prod = flow::cartesian_product_with(sum, longs, std::move(ints), shorts);
 
