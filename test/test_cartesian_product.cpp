@@ -34,7 +34,9 @@ constexpr bool test_cartesian_product2()
                     .cartesian_product(flow::c_str("abc"))
                     .map([](auto p) {
                         auto [i, c] = p;
-                        return flow::of(c).cycle().take(i);
+                        // Work around AppleClang bug
+                        auto f = flow::of{c};
+                        return std::move(f).cycle().take(i);
                     })
                     .flatten()
                     .equal(flow::c_str("abcaabbccaaabbbccc"));
