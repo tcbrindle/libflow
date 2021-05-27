@@ -38,7 +38,7 @@ private:
             if (!std::get<I>(maybes_)) {
                 std::get<I>(maybes_) = std::get<I - 1>(subs_).next();
                 if (!std::get<I>(maybes_)) {
-                    std::get<I - 1>(maybes_).reset();
+                    std::get<I - 1>(maybes_) = {};
                     return advance_<I - 1>();
                 }
 
@@ -62,6 +62,10 @@ private:
     }
 
 public:
+
+    static constexpr bool is_infinite =
+        is_infinite_flow<Flow0> || (is_infinite_flow<Flows> || ...);
+
     constexpr cartesian_product_with_adaptor(Func func, Flow0&& flow0, Flows&&... flows)
         : func_(std::move(func)),
           flows_(std::move(flow0), std::move(flows)...),
@@ -70,13 +74,19 @@ public:
 
     constexpr auto next() -> maybe<item_type>
     {
-        std::get<N - 1>(maybes_).reset();
+        std::get<N - 1>(maybes_) = {};
 
         if (!advance_<0>()) {
             return {};
         } else {
             return {apply_(std::make_index_sequence<N - 1>{})};
         }
+    }
+
+    template <bool B = is_sized_flow<Flow0> && (is_sized_flow<Flows> && ...)>
+    constexpr auto size() const -> std::enable_if_t<B, dist_t>
+    {
+        return std::apply([](auto const&... args) { return (args.size() * ...); }, flows_);
     }
 };
 
@@ -85,8 +95,6 @@ template <typename Func, typename Flow1, typename Flow2>
 struct cartesian_product_with_adaptor<Func, Flow1, Flow2>
     : flow_base<cartesian_product_with_adaptor<Func, Flow1, Flow2>>
 {
-
-
 private:
     FLOW_NO_UNIQUE_ADDRESS Func func_;
     Flow1 f1_;
@@ -97,6 +105,8 @@ private:
     using item_type = std::invoke_result_t<Func, item_t<Flow1>&, item_t<Flow2>>;
 
 public:
+    static constexpr bool is_infinite = is_infinite_flow<Flow1> || is_infinite_flow<Flow2>;
+
     constexpr cartesian_product_with_adaptor(Func func, Flow1&& flow1, Flow2&& flow2)
         : func_(std::move(func)),
           f1_(std::move(flow1)),
@@ -123,8 +133,12 @@ public:
 
             return {invoke(func_, *m1_, *std::move(m2))};
         }
+    }
 
-
+    template <bool B = is_sized_flow<Flow1> && is_sized_flow<Flow2>>
+    constexpr auto size() const -> std::enable_if_t<B, dist_t>
+    {
+        return f1_.size() * f2_.size();
     }
 };
 

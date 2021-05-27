@@ -30,6 +30,41 @@ constexpr bool test_cartesian_product_with3()
 }
 static_assert(test_cartesian_product_with3());
 
+constexpr bool test_cartesian_product_with_size3()
+{
+    const auto sink = [](auto...){};
+    const std::array arr{1, 2, 3};
+
+    {
+        auto prod = flow::from(arr).cartesian_product_with(sink, arr, arr);
+
+        static_assert(not flow::is_infinite_flow<decltype(prod)>);
+        static_assert(flow::is_sized_flow<decltype(prod)>);
+
+        if (prod.size() != 3 * 3 * 3) {
+            return false;
+        }
+    }
+
+    {
+        auto prod = flow::from(arr).filter([](auto) { return true; })
+                        .cartesian_product_with(sink, arr, arr);
+
+        static_assert(not flow::is_infinite_flow<decltype(prod)>);
+        static_assert(not flow::is_sized_flow<decltype(prod)>);
+    }
+
+    {
+        auto prod = flow::from(arr).cartesian_product_with(sink, flow::ints(), arr);
+
+        static_assert(flow::is_infinite_flow<decltype(prod)>);
+        static_assert(not flow::is_sized_flow<decltype(prod)>);
+    }
+
+    return true;
+}
+static_assert(test_cartesian_product_with_size3());
+
 constexpr bool test_cartesian_product_with2()
 {
     std::array floats{1.1f, 2.2f, 3.3f};
@@ -49,10 +84,51 @@ constexpr bool test_cartesian_product_with2()
 }
 static_assert(test_cartesian_product_with2());
 
+constexpr bool test_cartesian_product_with_size2()
+{
+    const auto sink = [](auto...){};
+    const std::array arr{1, 2, 3};
+
+    {
+        auto ints = flow::ints().take(10);
+
+        auto prod = flow::from(arr).cartesian_product_with(sink, std::move(ints));
+
+        static_assert(not flow::is_infinite_flow<decltype(prod)>);
+        static_assert(flow::is_sized_flow<decltype(prod)>);
+
+        if (prod.size() != 3 * 10) {
+            return false;
+        }
+    }
+
+    {
+        auto ints = flow::ints().take_while([](auto) { return true; });
+
+        auto prod = flow::from(arr).cartesian_product_with(sink, std::move(ints));
+
+        static_assert(not flow::is_infinite_flow<decltype(prod)>);
+        static_assert(not flow::is_sized_flow<decltype(prod)>);
+    }
+
+    {
+        auto prod = flow::ints().cartesian_product_with(sink, arr);
+
+        static_assert(flow::is_infinite_flow<decltype(prod)>);
+        static_assert(not flow::is_sized_flow<decltype(prod)>);
+    }
+
+    return true;
+}
+static_assert(test_cartesian_product_with_size2());
+
 TEST_CASE("Cartesian product with")
 {
     REQUIRE(test_cartesian_product_with3());
+    REQUIRE(test_cartesian_product_with_size3());
+
     REQUIRE(test_cartesian_product_with2());
+    REQUIRE(test_cartesian_product_with_size2());
 }
 
 }
