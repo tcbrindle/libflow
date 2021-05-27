@@ -558,9 +558,24 @@ public:
     template <typename Func, typename... Flowables>
     constexpr auto zip_with(Func func, Flowables&&... flowables) &&;
 
+    /// Given a callable and a pack of multipass-flowable objects, returns a new
+    /// flow which calls `func` with all combinations of items from each of the
+    /// flows. This can be used as an alternative to nested `for` loops.
+    ///
+    /// @param func Callable with signature compatible with `(item_t<Flows>...) -> R`,
+    ///             where `R` may not be `void`
+    /// @param flowables A pack of flowable objects, all of which must be multipass
+    /// @return A new flow whose item type is `R`.
     template <typename Func, typename... Flowables>
     constexpr auto cartesian_product_with(Func func, Flowables&&... flowables) &&;
 
+    /// Given a set of mutipass-flowable objects, returns a new flow whose item
+    /// type is a `std::pair` or `std::tuple` with successive combinations of
+    /// all the items of all the flows. This can be used as an alternative to
+    /// nested `for` loops.
+    ///
+    /// @param flowables A pack of flowable objects, all of which must be multipass
+    /// @return An adapted flow whose item type is a `std::tuple` or `std::pair`.
     template <typename... Flowables>
     constexpr auto cartesian_product(Flowables&&... flowables) &&;
 
