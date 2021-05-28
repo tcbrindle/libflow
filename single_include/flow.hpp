@@ -208,88 +208,437 @@ inline constexpr struct max_fn {
 
 
 
-#include <optional>
+#include <exception>
 
 namespace flow {
 
-template <typename>
-class optional;
+struct bad_maybe_access : std::exception {
+    bad_maybe_access() = default;
 
-template <typename>
-struct optional_ref;
+    [[nodiscard]] const char* what() const noexcept override
+    {
+        return "value() called on an empty maybe";
+    }
+};
+
+namespace detail {
+
+struct in_place_t {
+    constexpr explicit in_place_t() = default;
+};
+
+// Storage for the non-trivial case
+template <typename T, bool = std::is_trivially_destructible_v<T>>
+struct maybe_storage_base {
+
+    constexpr maybe_storage_base() noexcept
+        : dummy_{},
+          has_value_(false)
+    {}
+
+    template <typename... Args>
+    constexpr maybe_storage_base(in_place_t, Args&&... args)
+        noexcept(std::is_nothrow_constructible_v<T, Args&&...>)
+        : value_(FLOW_FWD(args)...),
+          has_value_(true)
+    {}
+
+    ~maybe_storage_base()
+    {
+        if (has_value_) {
+            value_.~T();
+        }
+    }
+
+    struct dummy {};
+
+    union {
+        dummy dummy_{};
+        T value_;
+    };
+
+    bool has_value_ = false;
+};
+
+// Storage for the trivially-destructible case
+template <typename T>
+struct maybe_storage_base<T, /*is_trivially_destructible =*/ true>
+{
+    constexpr maybe_storage_base() noexcept
+        : dummy_{},
+          has_value_(false)
+    {}
+
+    template <typename... Args>
+    constexpr maybe_storage_base(in_place_t, Args&&... args)
+        noexcept(std::is_nothrow_constructible_v<T, Args&&...>)
+        : value_(FLOW_FWD(args)...),
+          has_value_(true)
+    {}
+
+    struct dummy {};
+
+    union {
+        dummy dummy_{};
+        T value_;
+    };
+
+    bool has_value_ = false;
+};
 
 template <typename T>
-using maybe = std::conditional_t<
-    std::is_lvalue_reference_v<T>,
-        optional_ref<std::remove_reference_t<T>>,
-        optional<std::remove_const_t<std::remove_reference_t<T>>>>;
+struct maybe_ops_base : maybe_storage_base<T>
+{
+    using maybe_storage_base<T>::maybe_storage_base;
+
+    constexpr void hard_reset()
+    {
+        get().~T();
+        this->has_value_ = false;
+    }
+
+    template <typename... Args>
+    void construct(Args&&... args)
+    {
+        new (std::addressof(this->value_)) T(FLOW_FWD(args)...);
+        this->has_value_ = true;
+    }
+
+    template <typename Maybe>
+    constexpr void assign(Maybe&& other)
+    {
+        if (this->has_value()) {
+            if (other.has_value()) {
+                this->value_ = FLOW_FWD(other).get();
+            } else {
+                hard_reset();
+            }
+        } else if (other.has_value()){
+            construct(FLOW_FWD(other).get());
+        }
+    }
+
+    constexpr bool has_value() const
+    {
+        return this->has_value_;
+    }
+
+    constexpr T& get() & { return this->value_; }
+    constexpr T const& get() const& { return this->value_; }
+    constexpr T&& get() && { return std::move(this->value_); }
+    constexpr T&& get() const&& { return std::move(this->value); }
+};
+
+template <typename T, bool = std::is_trivially_copy_constructible_v<T>>
+struct maybe_copy_base : maybe_ops_base<T>
+{
+    using maybe_ops_base<T>::maybe_ops_base;
+
+    maybe_copy_base() = default;
+
+    constexpr maybe_copy_base(maybe_copy_base const& other)
+    {
+        if (other.has_value()) {
+            this->construct(other.get());
+        } else {
+            this->has_value_ = false;
+        }
+    }
+
+    maybe_copy_base(maybe_copy_base&&) = default;
+    maybe_copy_base& operator=(maybe_copy_base const&) = default;
+    maybe_copy_base& operator=(maybe_copy_base&&) = default;
+};
 
 template <typename T>
-class optional : std::optional<T>  {
+struct maybe_copy_base<T, /*std::is_trivially_copy_constructible =*/ true>
+    : maybe_ops_base<T>
+{
+    using maybe_ops_base<T>::maybe_ops_base;
+};
 
-    using base = std::optional<T>;
+
+template <typename T, bool = std::is_trivially_move_constructible_v<T>>
+struct maybe_move_base : maybe_copy_base<T>
+{
+    using maybe_copy_base<T>::maybe_copy_base;
+
+    maybe_move_base() = default;
+
+    maybe_move_base(maybe_move_base const&) = default;
+
+    constexpr maybe_move_base(maybe_move_base&& other)
+    noexcept(std::is_nothrow_move_constructible_v<T>)
+    {
+        if (other.has_value()) {
+            this->construct(std::move(other).get());
+        } else {
+            this->has_value_ = false;
+        }
+    }
+
+    maybe_move_base& operator=(maybe_move_base const&) = default;
+    maybe_move_base& operator=(maybe_move_base&&) = default;
+};
+
+template <typename T>
+struct maybe_move_base<T, /*is_trivially_move_constructible = */true>
+    : maybe_copy_base<T>
+{
+    using maybe_copy_base<T>::maybe_copy_base;
+};
+
+template <typename T, bool = std::is_trivially_copy_assignable_v<T>>
+struct maybe_copy_assign_base : maybe_move_base<T>
+{
+    using maybe_move_base<T>::maybe_move_base;
+
+    maybe_copy_assign_base() = default;
+
+    maybe_copy_assign_base(maybe_copy_assign_base const&) = default;
+
+    maybe_copy_assign_base(maybe_copy_assign_base&&) = default;
+
+    constexpr maybe_copy_assign_base&
+    operator=(maybe_copy_assign_base const& other)
+    {
+        this->assign(other);
+        return *this;
+    }
+
+    maybe_copy_assign_base& operator=(maybe_copy_assign_base&&) = default;
+};
+
+template <typename T>
+struct maybe_copy_assign_base<T, /*is_trivially_copy_assignable = */true>
+    : maybe_move_base<T>
+{
+    using maybe_move_base<T>::maybe_move_base;
+};
+
+template <typename T, bool = std::is_trivially_move_assignable_v<T>>
+struct maybe_move_assign_base : maybe_copy_assign_base<T>
+{
+    using maybe_copy_assign_base<T>::maybe_copy_assign_base;
+
+    maybe_move_assign_base() = default;
+
+    maybe_move_assign_base(maybe_move_assign_base const&) = default;
+
+    maybe_move_assign_base(maybe_move_assign_base&&) = default;
+
+    maybe_move_assign_base& operator=(maybe_move_assign_base const&) = default;
+
+    constexpr maybe_move_assign_base& operator=(maybe_move_assign_base&& other)
+    noexcept(std::is_nothrow_move_assignable_v<T> &&
+        std::is_nothrow_move_assignable_v<T>)
+    {
+        this->assign(std::move(other));
+        return *this;
+    }
+};
+
+template <typename T>
+struct maybe_move_assign_base<T, /*is_trivially_move_assignable = */ true>
+    : maybe_copy_assign_base<T>
+{
+    using maybe_copy_assign_base<T>::maybe_copy_assign_base;
+};
+
+template <typename T,
+    bool EnableCopy = std::is_copy_constructible_v<T>,
+    bool EnableMove = std::is_move_constructible_v<T>>
+struct maybe_delete_ctor_base {
+    maybe_delete_ctor_base() = default;
+    maybe_delete_ctor_base(maybe_delete_ctor_base const&) = default;
+    maybe_delete_ctor_base(maybe_delete_ctor_base&&) = default;
+    maybe_delete_ctor_base& operator=(maybe_delete_ctor_base const&) = default;
+    maybe_delete_ctor_base& operator=(maybe_delete_ctor_base&&) = default;
+};
+
+template <typename T>
+struct maybe_delete_ctor_base<T, false, true> {
+    maybe_delete_ctor_base() = default;
+    maybe_delete_ctor_base(maybe_delete_ctor_base const&) = delete;
+    maybe_delete_ctor_base(maybe_delete_ctor_base&&) = default;
+    maybe_delete_ctor_base& operator=(maybe_delete_ctor_base const&) = default;
+    maybe_delete_ctor_base& operator=(maybe_delete_ctor_base&&) = default;
+};
+
+template <typename T>
+struct maybe_delete_ctor_base<T, true, false> {
+    maybe_delete_ctor_base() = default;
+    maybe_delete_ctor_base(maybe_delete_ctor_base const&) = default;
+    maybe_delete_ctor_base(maybe_delete_ctor_base&&) = delete;
+    maybe_delete_ctor_base& operator=(maybe_delete_ctor_base const&) = default;
+    maybe_delete_ctor_base& operator=(maybe_delete_ctor_base&&) = default;
+};
+
+template <typename T>
+struct maybe_delete_ctor_base<T, false, false> {
+    maybe_delete_ctor_base() = default;
+    maybe_delete_ctor_base(maybe_delete_ctor_base const&) = delete;
+    maybe_delete_ctor_base(maybe_delete_ctor_base&&) = delete;
+    maybe_delete_ctor_base& operator=(maybe_delete_ctor_base const&) = default;
+    maybe_delete_ctor_base& operator=(maybe_delete_ctor_base&&) = default;
+};
+
+template <typename T,
+    bool EnableCopy = std::is_copy_assignable_v<T>,
+    bool EnableMove = std::is_move_assignable_v<T>>
+struct maybe_delete_assign_base {
+    maybe_delete_assign_base() = default;
+    maybe_delete_assign_base(maybe_delete_assign_base const&) = default;
+    maybe_delete_assign_base(maybe_delete_assign_base&&) = default;
+    maybe_delete_assign_base& operator=(maybe_delete_assign_base const&) = default;
+    maybe_delete_assign_base& operator=(maybe_delete_assign_base&&) = default;
+};
+
+template <typename T>
+struct maybe_delete_assign_base<T, false, true> {
+    maybe_delete_assign_base() = default;
+    maybe_delete_assign_base(maybe_delete_assign_base const&) = default;
+    maybe_delete_assign_base(maybe_delete_assign_base&&) = default;
+    maybe_delete_assign_base& operator=(maybe_delete_assign_base const&) = delete;
+    maybe_delete_assign_base& operator=(maybe_delete_assign_base&&) = default;
+};
+
+template <typename T>
+struct maybe_delete_assign_base<T, true, false> {
+    maybe_delete_assign_base() = default;
+    maybe_delete_assign_base(maybe_delete_assign_base const&) = default;
+    maybe_delete_assign_base(maybe_delete_assign_base&&) = default;
+    maybe_delete_assign_base& operator=(maybe_delete_assign_base const&) = default;
+    maybe_delete_assign_base& operator=(maybe_delete_assign_base&&) = delete;
+};
+
+template <typename T>
+struct maybe_delete_assign_base<T, false, false> {
+    maybe_delete_assign_base() = default;
+    maybe_delete_assign_base(maybe_delete_assign_base const&) = default;
+    maybe_delete_assign_base(maybe_delete_assign_base&&) = default;
+    maybe_delete_assign_base& operator=(maybe_delete_assign_base const&) = delete;
+    maybe_delete_assign_base& operator=(maybe_delete_assign_base&&) = delete;
+};
+
+} // namespace detail
+
+template <typename T>
+class maybe : detail::maybe_move_assign_base<T>,
+              detail::maybe_delete_ctor_base<T>,
+              detail::maybe_delete_assign_base<T>
+{
+    using base = detail::maybe_move_assign_base<T>;
 
 public:
     using value_type = T;
 
-    optional() = default;
+    maybe() = default;
 
     template <typename U, std::enable_if_t<std::is_same_v<T, U>, int> = 0>
-    constexpr optional(const U& value) : base{std::in_place, value} {}
+    constexpr maybe(U const& other)
+        : base(detail::in_place_t{}, other)
+    {}
 
     template <typename U, std::enable_if_t<std::is_same_v<T, U>, int> = 0>
-    constexpr optional(U&& value) : base{std::in_place, FLOW_FWD(value)} {}
+    constexpr maybe(U&& other)
+        : base(detail::in_place_t{}, FLOW_FWD(other))
+    {}
 
-    using base::operator*;
-    using base::operator->;
-    using base::value;
-    using base::value_or;
+    constexpr T& operator*() & { return this->get(); }
+    constexpr T const& operator*() const& { return this->get(); }
+    constexpr T&& operator*() && { return std::move(this->get()); }
+    constexpr T const&& operator*() const&& { return std::move(this->get()); }
+
+    constexpr T* operator->() { return std::addressof(**this); }
+    constexpr T const* operator->() const { return std::addressof(**this); }
+
+    constexpr T& value() & { return value_impl(*this); }
+    constexpr T const& value() const& { return value_impl(*this); }
+    constexpr T&& value() && { return value_impl(std::move(*this)); }
+    constexpr T const&& value() const&& { return value_impl(std::move(*this)); }
+
     using base::has_value;
-    using base::reset;
 
-#ifndef _MSC_VER
-    using std::optional<T>::operator bool;
-#else
-    constexpr explicit operator bool() const {
-        return this->has_value();
+    constexpr explicit operator bool() const { return has_value(); }
+
+    constexpr void reset() { this->hard_reset(); }
+
+    // I really want "deducing this"...
+    template <typename U>
+    constexpr auto value_or(U&& arg) &
+        -> decltype(has_value() ? std::declval<T&>() : FLOW_FWD(arg))
+    {
+        return has_value() ? **this : FLOW_FWD(arg);
     }
-#endif
+
+    template <typename U>
+    constexpr auto value_or(U&& arg) const&
+        -> decltype(has_value() ? std::declval<T const&>() : FLOW_FWD(arg))
+    {
+        return has_value() ? **this : FLOW_FWD(arg);
+    }
+
+    template <typename U>
+    constexpr auto value_or(U&& arg) &&
+        -> decltype(has_value() ? std::declval<T&&>() : FLOW_FWD(arg))
+    {
+        return has_value() ? *std::move(*this) : FLOW_FWD(arg);
+    }
+
+    template <typename U>
+    constexpr auto value_or(U&& arg) const&&
+        -> decltype(has_value() ? std::declval<T const&&>() : FLOW_FWD(arg))
+    {
+        return has_value() ? *std::move(*this) : FLOW_FWD(arg);
+    }
 
     template <typename Func>
     constexpr auto map(Func&& func) & { return map_impl(*this, FLOW_FWD(func)); }
     template <typename Func>
     constexpr auto map(Func&& func) const& { return map_impl(*this, FLOW_FWD(func)); }
     template <typename Func>
-    constexpr auto map(Func&& func) && { return map_impl(std::move(*this), FLOW_FWD(func)); }
+    constexpr auto map(Func&& func) && { return map_impl(std::move(*this),  FLOW_FWD(func)); }
     template <typename Func>
     constexpr auto map(Func&& func) const&& { return map_impl(std::move(*this), FLOW_FWD(func)); }
 
 private:
-    template <typename Self, typename F>
-    static constexpr auto map_impl(Self&& self, F&& func)
-        -> maybe<std::invoke_result_t<F, decltype(*FLOW_FWD(self))>>
+    template <typename Self>
+    constexpr static auto value_impl(Self&& self) -> decltype(auto)
     {
-        if (self) {
-            return invoke(FLOW_FWD(func), *FLOW_FWD(self));
+        if (self.has_value()) {
+            return *FLOW_FWD(self);
+        } else {
+            throw bad_maybe_access{};
         }
-        return {};
+    }
+
+    template <typename Self, typename Func>
+    constexpr static auto map_impl(Self&& self, Func&& func)
+        -> maybe<std::invoke_result_t<Func, decltype(*FLOW_FWD(self))>>
+    {
+        if (self.has_value()) {
+            return {FLOW_FWD(func)(*FLOW_FWD(self))};
+        } else {
+            return {};
+        }
     }
 };
 
+
 template <typename T>
-struct optional_ref {
-private:
+class maybe<T&> {
     T* ptr_ = nullptr;
 
 public:
     using value_type = T&;
 
-    optional_ref() = default;
+    maybe() = default;
 
     template <typename U, std::enable_if_t<std::is_same_v<T, U>, int> = 0>
-    constexpr optional_ref(U& item) : ptr_(std::addressof(item)) {}
+    constexpr maybe(U& item) : ptr_(std::addressof(item)) {}
 
-    optional_ref(T&&) = delete;
+    maybe(T&&) = delete;
 
     constexpr T& operator*() const { return *ptr_; }
     constexpr T* operator->() const { return ptr_; }
@@ -297,14 +646,14 @@ public:
     constexpr T& value() const
     {
         if (!ptr_) {
-            throw std::bad_optional_access{};
+            throw bad_maybe_access{};
         }
         return *ptr_;
     }
 
     template <typename U>
     constexpr auto value_or(U&& arg) const
-        -> decltype(ptr_ ? *ptr_ : FLOW_FWD(arg))
+    -> decltype(ptr_ ? *ptr_ : FLOW_FWD(arg))
     {
         return ptr_ ? *ptr_ : FLOW_FWD(arg);
     }
@@ -369,9 +718,9 @@ struct cmp {
 
 /// Given a predicate, returns a new predicate with the condition reversed
 inline constexpr auto not_ = [](auto&& pred) {
-    return detail::predicate{[p = FLOW_FWD(pred)] (auto const&... args) {
+    return detail::make_predicate([p = FLOW_FWD(pred)] (auto const&... args) {
         return !invoke(p, FLOW_FWD(args)...);
-    }};
+    });
 };
 
 /// Returns a new predicate which is satisifed only if both the given predicates
@@ -503,16 +852,16 @@ using dist_t = std::make_signed_t<std::size_t>;
 template <typename Derived>
 struct flow_base;
 
+template <typename>
+class maybe;
+
 namespace detail {
 
 template <typename>
 inline constexpr bool is_maybe = false;
 
 template <typename T>
-inline constexpr bool is_maybe<optional<T>> = true;
-
-template <typename T>
-inline constexpr bool is_maybe<optional_ref<T>> = true;
+inline constexpr bool is_maybe<maybe<T>> = true;
 
 template <typename, typename = void>
 inline constexpr bool has_next = false;
@@ -1274,11 +1623,11 @@ public:
     /// `map([](auto&& item) -> decltype(auto) { return *forward(item); })`
     ///
     /// @warning This function **does not** check whether the items are
-    /// non-null (or equivalent) before dereferencing. See `filter_deref()` for
+    /// non-null (or equivalent) before dereferencing. See `deref()` for
     /// a safer, checking version.
     ///
     /// @return An adaptor that dereferences each item of the original flow
-    constexpr auto deref() &&;
+    constexpr auto unchecked_deref() &&;
 
     /// Consumes the flow, returning an adaptor which copies every item.
     ///
@@ -1304,6 +1653,18 @@ public:
     /// @return A flow adaptor which casts each item to an xvalue.
     constexpr auto move() && -> decltype(auto);
 
+    /// Consumes the flow, returning an adaptor which converts each reference
+    /// item to a const reference.
+    ///
+    /// If the flow's item type is an lvalue reference type `T&`, this returns
+    /// a new flow whose item type is `const T&`.
+    ///
+    /// If the flow's item type is not an lvalue reference, this adaptor has
+    /// no effect.
+    ///
+    /// @return A flow adaptor which converts each item to a const reference
+    constexpr auto as_const() && -> decltype(auto);
+
     /// Consumes the flow, returning a new flow which yields the same items
     /// but calls @func at each call to `next()`, passing it a const reference
     /// to the item.
@@ -1321,6 +1682,24 @@ public:
     /// @return A new filter adaptor.
     template <typename Pred>
     constexpr auto filter(Pred pred) &&;
+
+    /// Consumes the flow, returning an adaptor which dereferences each item
+    /// using unary `operator*`.
+    ///
+    /// This is useful when you have a flow of a dereferenceable type (for
+    /// example a pointer, a `flow::maybe` or a `std::optional`), and want a
+    /// flow of (references to) the values they contain.
+    ///
+    /// Unlike `unchecked_deref()`, this adaptor first attempts to check whether
+    /// item contains a value, using a static_cast to bool. If the check returns
+    /// false, the item is skipped.
+    ///
+    /// Equivalent to:
+    ///
+    /// `filter([](const auto& i) { return static_cast<bool>(i); }.unchecked_deref()`
+    ///
+    /// @return An adaptor that dereferences each item of the original flow
+    constexpr auto deref() &&;
 
     /// Consumes the flow, returning a new flow which skips the first `count` items.
     ///
@@ -1450,9 +1829,9 @@ public:
     template <typename... Flowables>
     constexpr auto zip(Flowables&&... flowables) &&;
 
-    /// Adapts the flow so that it returns (item, index) pairs.
+    /// Adapts the flow so that it returns (index, item) pairs.
     ///
-    /// Equivalent to zip(flow::ints());
+    /// Equivalent to flow::ints().zip(*this)
     ///
     /// @return A new enumerate adaptor
     constexpr auto enumerate() &&;
@@ -1469,6 +1848,27 @@ public:
     /// @return A new flow whose item type is `R`.
     template <typename Func, typename... Flowables>
     constexpr auto zip_with(Func func, Flowables&&... flowables) &&;
+
+    /// Given a callable and a pack of multipass-flowable objects, returns a new
+    /// flow which calls `func` with all combinations of items from each of the
+    /// flows. This can be used as an alternative to nested `for` loops.
+    ///
+    /// @param func Callable with signature compatible with `(item_t<Flows>...) -> R`,
+    ///             where `R` may not be `void`
+    /// @param flowables A pack of flowable objects, all of which must be multipass
+    /// @return A new flow whose item type is `R`.
+    template <typename Func, typename... Flowables>
+    constexpr auto cartesian_product_with(Func func, Flowables&&... flowables) &&;
+
+    /// Given a set of mutipass-flowable objects, returns a new flow whose item
+    /// type is a `std::pair` or `std::tuple` with successive combinations of
+    /// all the items of all the flows. This can be used as an alternative to
+    /// nested `for` loops.
+    ///
+    /// @param flowables A pack of flowable objects, all of which must be multipass
+    /// @return An adapted flow whose item type is a `std::tuple` or `std::pair`.
+    template <typename... Flowables>
+    constexpr auto cartesian_product(Flowables&&... flowables) &&;
 
     /// Turns a flow into a flow-of-flows, where each inner flow ("group") is
     /// delimited by the return value of `func`.
@@ -1621,6 +2021,7 @@ public:
 
 
 
+
 #ifndef FLOW_OP_ALL_ANY_NONE_HPP_INCLUDED
 #define FLOW_OP_ALL_ANY_NONE_HPP_INCLUDED
 
@@ -1673,6 +2074,460 @@ template <typename Pred>
 constexpr auto flow_base<D>::none(Pred pred) -> bool
 {
     return derived().all(pred::not_(std::move(pred)));
+}
+
+}
+
+#endif
+
+
+#ifndef FLOW_OP_CARTESIAN_PRODUCT_HPP_INCLUDED
+#define FLOW_OP_CARTESIAN_PRODUCT_HPP_INCLUDED
+
+
+#ifndef FLOW_OP_ZIP_HPP_INCLUDED
+#define FLOW_OP_ZIP_HPP_INCLUDED
+
+
+
+#ifndef FLOW_SOURCE_IOTA_HPP_INCLUDED
+#define FLOW_SOURCE_IOTA_HPP_INCLUDED
+
+
+
+namespace flow {
+
+namespace detail {
+
+inline constexpr auto pre_inc = [] (auto& val)
+    -> decltype(val++) { return val++; };
+
+inline constexpr auto iota_size_fn = [](auto const& val, auto const& bound)
+    -> decltype(bound - val)
+{
+    return bound - val;
+};
+
+inline constexpr auto stepped_iota_size_fn =
+    [](auto const& val, auto const& bound, auto const& step)
+    -> decltype((bound - val)/step + ((bound - val) % step != 0))
+{
+    return (bound - val)/step + ((bound - val) % step != 0);
+};
+
+template <typename Val>
+struct iota_flow : flow_base<iota_flow<Val>> {
+    static constexpr bool is_infinite = true;
+
+    constexpr iota_flow(Val&& val)
+        : val_(std::move(val))
+    {}
+
+    constexpr auto next() -> maybe<Val>
+    {
+        return {val_++};
+    }
+
+private:
+    Val val_;
+};
+
+template <typename Val, typename Bound>
+struct bounded_iota_flow : flow_base<bounded_iota_flow<Val, Bound>> {
+
+    constexpr bounded_iota_flow(Val&& val, Bound&& bound)
+        : val_(std::move(val)),
+          bound_(std::move(bound))
+    {}
+
+    constexpr auto next() -> maybe<Val>
+    {
+        if (val_ < bound_) {
+            return {val_++};
+        }
+        return {};
+    }
+
+    template <bool B = std::is_same_v<Val, Bound>>
+    constexpr auto next_back() -> std::enable_if_t<B, maybe<Val>>
+    {
+        if (val_ < bound_) {
+            return {--bound_};
+        }
+        return {};
+    }
+
+    template <typename V = const Val&, typename B = const Bound&,
+              typename = std::enable_if_t<
+                  std::is_invocable_r_v<flow::dist_t, decltype(iota_size_fn), V, B>>>
+    [[nodiscard]] constexpr auto size() const -> dist_t
+    {
+        return iota_size_fn(val_, bound_);
+    }
+
+private:
+    Val val_;
+    FLOW_NO_UNIQUE_ADDRESS Bound bound_;
+};
+
+template <typename Val, typename Bound, typename Step>
+struct stepped_iota_flow : flow_base<stepped_iota_flow<Val, Bound, Step>> {
+private:
+    Val val_;
+    Bound bound_;
+    Step step_;
+    bool step_positive_ = step_ > Step{};
+
+public:
+    constexpr stepped_iota_flow(Val val, Bound bound, Step step)
+        : val_(std::move(val)),
+          bound_(std::move(bound)),
+          step_(std::move(step))
+    {}
+
+    constexpr auto next() -> maybe<Val>
+    {
+        if (step_positive_) {
+            if (val_ >= bound_) {
+                return {};
+            }
+        } else {
+            if (val_ <= bound_) {
+                return {};
+            }
+        }
+
+        auto tmp = val_;
+        val_ += step_;
+        return {std::move(tmp)};
+    }
+
+    template <typename V = Val, typename B = Bound, typename S = Step,
+              typename = std::enable_if_t<
+                  std::is_invocable_r_v<dist_t, decltype(stepped_iota_size_fn), V&, B&, S&>
+                  >>
+    [[nodiscard]] constexpr auto size() const -> dist_t
+    {
+        return static_cast<dist_t>(stepped_iota_size_fn(val_, bound_, step_));
+    }
+
+
+};
+
+struct iota_fn {
+
+    template <typename Val>
+    constexpr auto operator()(Val from) const
+    {
+        static_assert(std::is_invocable_v<decltype(pre_inc), Val&>,
+                      "Type passed to flow::iota() must have a pre-increment operator++(int)");
+        return iota_flow<Val>(std::move(from));
+    }
+
+    template <typename Val, typename Bound>
+    constexpr auto operator()(Val from, Bound upto) const
+    {
+        static_assert(std::is_invocable_v<decltype(pre_inc), Val&>,
+                      "Type passed to flow::iota() must have a pre-increment operator++(int)");
+        return bounded_iota_flow<Val, Bound>(std::move(from), std::move(upto));
+    }
+
+    template <typename Val, typename Bound, typename Step>
+    constexpr auto operator()(Val from, Bound upto, Step step) const
+    {
+        return stepped_iota_flow<Val, Bound, Step>(
+            std::move(from), std::move(upto), std::move(step));
+    }
+};
+
+struct ints_fn {
+
+    constexpr auto operator()() const
+    {
+        return iota_fn{}(dist_t{0});
+    }
+
+    constexpr auto operator()(dist_t from) const
+    {
+        return iota_fn{}(from);
+    }
+
+    constexpr auto operator()(dist_t from, dist_t upto) const
+    {
+        return iota_fn{}(from, upto);
+    }
+
+    constexpr auto operator()(dist_t from, dist_t upto, dist_t step) const
+    {
+        return iota_fn{}(from, upto, step);
+    }
+
+};
+
+} // namespace detail
+
+constexpr auto iota = detail::iota_fn{};
+
+constexpr auto ints = detail::ints_fn{};
+
+}
+
+#endif
+
+
+namespace flow {
+
+namespace detail {
+
+template <typename... Flows>
+struct zip_item_type {
+    using type = std::tuple<item_t<Flows>...>;
+};
+
+template <typename F1, typename F2>
+struct zip_item_type<F1, F2> {
+    using type = std::pair<item_t<F1>, item_t<F2>>;
+};
+
+template <typename... Flows>
+using zip_item_t = typename zip_item_type<Flows...>::type;
+
+}
+
+inline constexpr auto zip = [](auto&& flowable0, auto&&... flowables)
+{
+    static_assert(is_flowable<decltype(flowable0)>,
+                  "All arguments to zip() must be Flowable");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable0))).zip(FLOW_FWD(flowables)...);
+};
+
+inline constexpr auto enumerate = [](auto&& flowable)
+{
+    static_assert(is_flowable<decltype(flowable)>,
+                  "Argument to flow::enumerate() must be a Flowable type");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).enumerate();
+};
+
+template <typename D>
+template <typename... Flowables>
+constexpr auto flow_base<D>::zip(Flowables&&... flowables) &&
+{
+    static_assert((is_flowable<Flowables> && ...),
+                   "All arguments to zip() must be Flowable");
+
+    return consume().zip_with([](auto&&... items) {
+        return detail::zip_item_t<D, flow_t<Flowables>...>(FLOW_FWD(items)...);
+    }, FLOW_FWD(flowables)...);
+}
+
+template <typename D>
+constexpr auto flow_base<D>::enumerate() &&
+{
+    return flow::ints().zip(consume());
+}
+
+}
+
+#endif
+
+
+namespace flow {
+
+inline constexpr auto cartesian_product = [](auto&& flowable0, auto&&... flowables)
+{
+    static_assert(is_flowable<decltype(flowable0)>,
+                  "All arguments to cartesian_product() must be flowable");
+
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable0))).cartesian_product(FLOW_FWD(flowables)...);
+};
+
+template <typename D>
+template <typename... Fs>
+constexpr auto flow_base<D>::cartesian_product(Fs&&... flowables) &&
+{
+    static_assert((is_flowable<Fs> && ...),
+                  "All arguments to cartesian_product() must be flowable");
+    static_assert((is_multipass_flow<flow_t<Fs>> && ...),
+                  "All flows passed to cartesian_product() must be multipass");
+
+    return consume().cartesian_product_with(
+            [](auto&&... items) { return detail::zip_item_t<D, flow_t<Fs>...>(FLOW_FWD(items)...); },
+            FLOW_FWD(flowables)...);
+}
+
+}
+
+#endif
+
+
+#ifndef FLOW_OP_CARTESIAN_PRODUCT_WITH_HPP_INCLUDED
+#define FLOW_OP_CARTESIAN_PRODUCT_WITH_HPP_INCLUDED
+
+
+
+namespace flow {
+
+namespace detail {
+
+template <typename Func, typename Flow0, typename... Flows>
+struct cartesian_product_with_adaptor
+    : flow_base<cartesian_product_with_adaptor<Func, Flow0, Flows...>>
+{
+private:
+    FLOW_NO_UNIQUE_ADDRESS Func func_;
+    std::tuple<Flow0, Flows...> flows_;
+    std::tuple<subflow_t<Flows>...> subs_;
+    std::tuple<next_t<Flow0>, next_t<Flows>...> maybes_{};
+
+    inline static constexpr std::size_t N = 1 + sizeof...(Flows);
+    using item_type = std::invoke_result_t<Func, item_t<Flow0>&, item_t<subflow_t<Flows>>&...>;
+
+    template <std::size_t I>
+    constexpr bool advance_()
+    {
+        if constexpr (I == 0) {
+            if (!std::get<I>(maybes_)) {
+                std::get<I>(maybes_) = std::get<I>(flows_).next();
+
+                if (!std::get<I>(maybes_)) {
+                    return false; // We're done
+                }
+
+                std::get<I>(subs_) = std::get<I + 1>(flows_).subflow();
+            }
+        } else {
+            if (!std::get<I>(maybes_)) {
+                std::get<I>(maybes_) = std::get<I - 1>(subs_).next();
+                if (!std::get<I>(maybes_)) {
+                    std::get<I - 1>(maybes_) = {};
+                    return advance_<I - 1>();
+                }
+
+                if constexpr (I < N - 1) {
+                    std::get<I>(subs_) = std::get<I + 1>(flows_).subflow();
+                }
+            }
+        }
+
+        if constexpr (I < N - 1) {
+            return advance_<I + 1>();
+        } else {
+            return true;
+        }
+    }
+
+    template <std::size_t... I>
+    constexpr auto apply_(std::index_sequence<I...>) -> decltype(auto)
+    {
+        return invoke(func_, *std::get<I>(maybes_)..., *std::get<N - 1>(std::move(maybes_)));
+    }
+
+public:
+
+    static constexpr bool is_infinite =
+        is_infinite_flow<Flow0> || (is_infinite_flow<Flows> || ...);
+
+    constexpr cartesian_product_with_adaptor(Func func, Flow0&& flow0, Flows&&... flows)
+        : func_(std::move(func)),
+          flows_(std::move(flow0), std::move(flows)...),
+          subs_(flows.subflow()...)
+    {}
+
+    constexpr auto next() -> maybe<item_type>
+    {
+        std::get<N - 1>(maybes_) = {};
+
+        if (!advance_<0>()) {
+            return {};
+        } else {
+            return {apply_(std::make_index_sequence<N - 1>{})};
+        }
+    }
+
+    template <bool B = is_sized_flow<Flow0> && (is_sized_flow<Flows> && ...)>
+    constexpr auto size() const -> std::enable_if_t<B, dist_t>
+    {
+        return std::apply([](auto const&... args) { return (args.size() * ...); }, flows_);
+    }
+};
+
+// Specialisation for the common case of twp flows
+template <typename Func, typename Flow1, typename Flow2>
+struct cartesian_product_with_adaptor<Func, Flow1, Flow2>
+    : flow_base<cartesian_product_with_adaptor<Func, Flow1, Flow2>>
+{
+private:
+    FLOW_NO_UNIQUE_ADDRESS Func func_;
+    Flow1 f1_;
+    Flow2 f2_;
+    subflow_t<Flow2> s2_ = f2_.subflow();
+    next_t<Flow1> m1_{};
+
+    using item_type = std::invoke_result_t<Func, item_t<Flow1>&, item_t<Flow2>>;
+
+public:
+    static constexpr bool is_infinite = is_infinite_flow<Flow1> || is_infinite_flow<Flow2>;
+
+    constexpr cartesian_product_with_adaptor(Func func, Flow1&& flow1, Flow2&& flow2)
+        : func_(std::move(func)),
+          f1_(std::move(flow1)),
+          f2_(std::move(flow2))
+    {}
+
+    constexpr auto next() -> maybe<item_type>
+    {
+        while (true) {
+            if (!m1_) {
+                m1_ = f1_.next();
+                if (!m1_) {
+                    return {}; // we're done
+                }
+
+                s2_ = f2_.subflow();
+            }
+
+            auto m2 = s2_.next();
+            if (!m2) {
+                m1_.reset();
+                continue;
+            }
+
+            return {invoke(func_, *m1_, *std::move(m2))};
+        }
+    }
+
+    template <bool B = is_sized_flow<Flow1> && is_sized_flow<Flow2>>
+    constexpr auto size() const -> std::enable_if_t<B, dist_t>
+    {
+        return f1_.size() * f2_.size();
+    }
+};
+
+}
+
+inline constexpr auto cartesian_product_with =
+    [](auto func, auto&& flowable0, auto&&... flowables)
+{
+    static_assert(is_flowable<decltype(flowable0)>,
+                  "All arguments to cartesian_product_with() must be Flowable");
+    return flow::from(FLOW_FWD(flowable0))
+      .cartesian_product_with(std::move(func), FLOW_FWD(flowables)...);
+};
+
+template <typename Derived>
+template <typename Func, typename... Flowables>
+constexpr auto flow_base<Derived>::cartesian_product_with(Func func, Flowables&&... flowables) &&
+{
+    static_assert((is_flowable<Flowables> && ...),
+                  "All arguments to cartesian_product_with() must be Flowable");
+    static_assert((is_multipass_flow<flow_t<Flowables>> && ...),
+                  "To use cartesian_product_with(), all flows except the "
+                  "first must be multipass");
+    static_assert(std::is_invocable_v<Func&, item_t<Derived>&, flow_item_t<Flowables>&...>,
+                  "Incompatible callable passed to cartesian_product_with()");
+
+    return detail::cartesian_product_with_adaptor<Func, Derived, flow_t<Flowables>...>
+        (std::move(func), consume(), flow::from(FLOW_FWD(flowables))...);
 }
 
 }
@@ -2518,6 +3373,37 @@ constexpr auto flow_base<D>::cycle() &&
 #endif
 
 
+#ifndef FLOW_OP_DEREF_HPP_INCLUDED
+#define FLOW_OP_DEREF_HPP_INCLUDED
+
+
+
+namespace flow {
+
+inline constexpr auto deref = [](auto&& flowable)
+{
+    static_assert(is_flowable<decltype(flowable)>,
+                  "Argument to flow::deref must be a flowable type");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).deref();
+};
+
+template <typename D>
+constexpr auto flow_base<D>::deref() &&
+{
+    const auto bool_check = [](const auto& i) -> decltype(static_cast<bool>(i)) {
+        return static_cast<bool>(i);
+    };
+
+    static_assert(std::is_invocable_v<decltype(bool_check), item_t<D>>,
+                  "Flow's item type is not explicitly convertible to bool");
+
+    return consume().filter(bool_check).unchecked_deref();
+}
+
+}
+
+#endif
+
 #ifndef FLOW_OP_DROP_HPP_INCLUDED
 #define FLOW_OP_DROP_HPP_INCLUDED
 
@@ -3310,16 +4196,16 @@ constexpr auto flow_base<D>::as() &&
     });
 }
 
-// deref()
+// unchecked_deref()
 
-inline constexpr auto deref = [](auto&& flowable) {
+inline constexpr auto unchecked_deref = [](auto&& flowable) {
     static_assert(is_flowable<decltype(flowable)>,
-                  "Argument to flow::deref() must be a Flowable type");
-    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).deref();
+                  "Argument to flow::unchecked_deref() must be a Flowable type");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).unchecked_deref();
 };
 
 template <typename D>
-constexpr auto flow_base<D>::deref() &&
+constexpr auto flow_base<D>::unchecked_deref() &&
 {
     auto deref = [](auto&& val) -> decltype(*FLOW_FWD(val)) {
         return *FLOW_FWD(val);
@@ -3361,7 +4247,28 @@ template <typename D>
 constexpr auto flow_base<D>::move() && -> decltype(auto)
 {
     if constexpr (std::is_lvalue_reference_v<item_t<D>>) {
-        return consume().template as<std::remove_reference_t<item_t<D>>&&>();
+        return consume().map([](auto& item) { return std::move(item); });
+    } else {
+        return consume();
+    }
+}
+
+// as_const()
+
+inline constexpr auto as_const = [](auto&& flowable) {
+    static_assert(is_flowable<decltype(flowable)>,
+                  "Argument to flow::as_const() must be a Flowable type");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).as_const();
+};
+
+template <typename D>
+constexpr auto flow_base<D>::as_const() && -> decltype(auto)
+{
+    using I = item_t<D>;
+
+    if constexpr (std::is_lvalue_reference_v<I> &&
+                  !std::is_const_v<std::remove_reference_t<I>>) {
+        return consume().template as<std::remove_reference_t<I> const&>();
     } else {
         return consume();
     }
@@ -3382,7 +4289,18 @@ struct elements_op {
     }
 };
 
-}
+// This should be a lambda inside elements<N>(), but MSVC doesn't like it at all
+template <std::size_t N>
+struct tuple_getter {
+    template <typename Tuple>
+    constexpr auto operator()(Tuple&& tup) const
+        -> remove_rref_t<decltype(std::get<N>(FLOW_FWD(tup)))>
+    {
+        return std::get<N>(FLOW_FWD(tup));
+    }
+};
+
+} // namespace detail
 
 template <std::size_t N>
 inline constexpr auto elements = detail::elements_op<N>{};
@@ -3391,13 +4309,10 @@ template <typename D>
 template <std::size_t N>
 constexpr auto flow_base<D>::elements() &&
 {
-    auto get_fn = [](auto&& val) -> remove_rref_t<decltype(std::get<N>(FLOW_FWD(val)))> {
-        return std::get<N>(FLOW_FWD(val));
-    };
-    static_assert(std::is_invocable_v<decltype(get_fn), item_t<D>>,
+    static_assert(std::is_invocable_v<detail::tuple_getter<N>&, item_t<D>>,
                   "Flow's item type is not tuple-like");
 
-    return consume().map(std::move(get_fn));
+    return consume().map(detail::tuple_getter<N>{});
 }
 
 // keys
@@ -4307,235 +5222,6 @@ constexpr auto flow_base<D>::write_to(std::basic_ostream<CharT, Traits>& os, Sep
 #endif
 
 
-
-#ifndef FLOW_OP_ZIP_HPP_INCLUDED
-#define FLOW_OP_ZIP_HPP_INCLUDED
-
-
-
-#ifndef FLOW_SOURCE_IOTA_HPP_INCLUDED
-#define FLOW_SOURCE_IOTA_HPP_INCLUDED
-
-
-
-namespace flow {
-
-namespace detail {
-
-struct unreachable_bound {
-    template <typename T>
-    friend constexpr bool operator<(const T&, const unreachable_bound&)
-    {
-        return true;
-    }
-};
-
-inline constexpr auto pre_inc = [] (auto& val)
-    -> decltype(val++) { return val++; };
-
-inline constexpr auto iota_size_fn = [](auto const& val, auto const& bound)
-    -> decltype(bound - val)
-{
-    return bound - val;
-};
-
-inline constexpr auto stepped_iota_size_fn =
-    [](auto const& val, auto const& bound, auto const& step)
-    -> decltype((bound - val)/step + ((bound - val) % step != 0))
-{
-    return (bound - val)/step + ((bound - val) % step != 0);
-};
-
-template <typename Val, typename Bound>
-struct iota_flow : flow_base<iota_flow<Val, Bound>> {
-
-    static constexpr bool is_infinite = std::is_same_v<Bound, unreachable_bound>;
-
-    constexpr iota_flow(Val&& val, Bound&& bound)
-        : val_(std::move(val)),
-          bound_(std::move(bound))
-    {}
-
-    constexpr auto next() -> maybe<Val>
-    {
-        if (val_ < bound_) {
-            return {val_++};
-        }
-        return {};
-    }
-
-    template <typename V = const Val&, typename B = const Bound&,
-              typename = std::enable_if_t<
-                  std::is_invocable_r_v<flow::dist_t, decltype(iota_size_fn), V, B>>>
-    [[nodiscard]] constexpr auto size() const -> dist_t
-    {
-        return iota_size_fn(val_, bound_);
-    }
-
-private:
-    Val val_;
-    FLOW_NO_UNIQUE_ADDRESS Bound bound_;
-};
-
-template <typename Val, typename Bound, typename Step>
-struct stepped_iota_flow : flow_base<stepped_iota_flow<Val, Bound, Step>> {
-private:
-    Val val_;
-    Bound bound_;
-    Step step_;
-    bool step_positive_ = step_ > Step{};
-
-public:
-    constexpr stepped_iota_flow(Val val, Bound bound, Step step)
-        : val_(std::move(val)),
-          bound_(std::move(bound)),
-          step_(std::move(step))
-    {}
-
-    constexpr auto next() -> maybe<Val>
-    {
-        if (step_positive_) {
-            if (val_ >= bound_) {
-                return {};
-            }
-        } else {
-            if (val_ <= bound_) {
-                return {};
-            }
-        }
-
-        auto tmp = val_;
-        val_ += step_;
-        return {std::move(tmp)};
-    }
-
-    template <typename V = Val, typename B = Bound, typename S = Step,
-              typename = std::enable_if_t<
-                  std::is_invocable_r_v<dist_t, decltype(stepped_iota_size_fn), V&, B&, S&>
-                  >>
-    [[nodiscard]] constexpr auto size() const -> dist_t
-    {
-        return static_cast<dist_t>(stepped_iota_size_fn(val_, bound_, step_));
-    }
-
-
-};
-
-struct iota_fn {
-
-    template <typename Val>
-    constexpr auto operator()(Val from) const
-    {
-        static_assert(std::is_invocable_v<decltype(pre_inc), Val&>,
-                      "Type passed to flow::iota() must have a pre-increment operator++(int)");
-        return iota_flow<Val, unreachable_bound>(std::move(from), unreachable_bound{});
-    }
-
-    template <typename Val, typename Bound>
-    constexpr auto operator()(Val from, Bound upto) const
-    {
-        static_assert(std::is_invocable_v<decltype(pre_inc), Val&>,
-                      "Type passed to flow::iota() must have a pre-increment operator++(int)");
-        return iota_flow<Val, Bound>(std::move(from), std::move(upto));
-    }
-
-    template <typename Val, typename Bound, typename Step>
-    constexpr auto operator()(Val from, Bound upto, Step step) const
-    {
-        return stepped_iota_flow<Val, Bound, Step>(
-            std::move(from), std::move(upto), std::move(step));
-    }
-};
-
-struct ints_fn {
-
-    constexpr auto operator()() const
-    {
-        return iota_fn{}(dist_t{0});
-    }
-
-    constexpr auto operator()(dist_t from) const
-    {
-        return iota_fn{}(from);
-    }
-
-    constexpr auto operator()(dist_t from, dist_t upto) const
-    {
-        return iota_fn{}(from, upto);
-    }
-
-    constexpr auto operator()(dist_t from, dist_t upto, dist_t step) const
-    {
-        return iota_fn{}(from, upto, step);
-    }
-
-};
-
-} // namespace detail
-
-constexpr auto iota = detail::iota_fn{};
-
-constexpr auto ints = detail::ints_fn{};
-
-}
-
-#endif
-
-
-namespace flow {
-
-namespace detail {
-
-template <typename... Flows>
-struct zip_item_type {
-    using type = std::tuple<item_t<Flows>...>;
-};
-
-template <typename F1, typename F2>
-struct zip_item_type<F1, F2> {
-    using type = std::pair<item_t<F1>, item_t<F2>>;
-};
-
-template <typename... Flows>
-using zip_item_t = typename zip_item_type<Flows...>::type;
-
-}
-
-inline constexpr auto zip = [](auto&& flowable0, auto&&... flowables)
-{
-    static_assert(is_flowable<decltype(flowable0)>,
-                  "All arguments to zip() must be Flowable");
-    return FLOW_COPY(flow::from(FLOW_FWD(flowable0))).zip(FLOW_FWD(flowables)...);
-};
-
-inline constexpr auto enumerate = [](auto&& flowable)
-{
-    static_assert(is_flowable<decltype(flowable)>,
-                  "Argument to flow::enumerate() must be a Flowable type");
-    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).enumerate();
-};
-
-template <typename D>
-template <typename... Flowables>
-constexpr auto flow_base<D>::zip(Flowables&&... flowables) &&
-{
-    static_assert((is_flowable<Flowables> && ...),
-                   "All arguments to zip() must be Flowable");
-
-    return consume().zip_with([](auto&&... items) {
-        return detail::zip_item_t<D, flow_t<Flowables>...>(FLOW_FWD(items)...);
-    }, FLOW_FWD(flowables)...);
-}
-
-template <typename D>
-constexpr auto flow_base<D>::enumerate() &&
-{
-    return consume().zip(flow::ints());
-}
-
-}
-
-#endif
 
 
 #ifndef FLOW_OP_ZIP_WITH_HPP_INCLUDED
