@@ -3,13 +3,9 @@
 
 #include "catch.hpp"
 
-// This file is a bit of a mess because the regex used to add Catch tests to
-// CTest doesn't look inside ifdefs, so we need to ensure the tests are always
-// present (and will trivially pass) even when we don't have coro support.
+#ifdef FLOW_HAVE_COROUTINES
 
 namespace {
-
-#ifdef FLOW_HAVE_COROUTINES
 
 auto get_names() -> flow::async<std::string>
 {
@@ -50,39 +46,34 @@ auto pythagorean_triples() -> flow::async<triple>
     }
 }
 
-#endif // FLOW_HAVE_COROUTINES
-
 TEST_CASE("async names", "[flow.async]")
 {
-#ifdef FLOW_HAVE_COROUTINES
     std::vector<std::string> vec = get_names().collect();
 
     REQUIRE(vec.size() == 3);
     REQUIRE((vec == std::vector<std::string>{"Adam", "Barbara", "Clive"}));
 
     REQUIRE(get_names().sum() == "AdamBarbaraClive");
-#endif
 }
 
 TEST_CASE("async ints", "[flow.async]")
 {
-#ifdef FLOW_HAVE_COROUTINES
     auto vec = ints().take(5).to_vector();
 
     REQUIRE(vec.size() == 5);
     for (std::size_t i = 0; i < vec.size(); i++) {
         REQUIRE(vec[i] == i);
     }
-#endif
 }
 
 TEST_CASE("async triples", "[flow.async]")
 {
-#ifdef FLOW_HAVE_COROUTINES
     for (auto [x, y, z] : pythagorean_triples().take(10).to_range()) {
         REQUIRE(x * x + y * y == z * z);
     }
-#endif
 }
 
 }
+
+#endif // FLOW_HAVE_COROUTINES
+
