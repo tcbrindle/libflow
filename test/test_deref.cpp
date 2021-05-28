@@ -39,9 +39,7 @@ constexpr bool test_deref()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_deref());
-#endif
 
 constexpr bool test_deref_optional()
 {

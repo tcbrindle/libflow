@@ -98,9 +98,7 @@ constexpr bool test_nonmember_find()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_nonmember_find());
-#endif
 
 TEST_CASE("find() non-member", "[flow.find]")
 {

@@ -111,9 +111,7 @@ constexpr bool test_chain3()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_chain3());
-#endif
 
 // Same again, but this time testing the two-flow chain specialisation
 constexpr bool test_chain2()
@@ -197,9 +195,7 @@ constexpr bool test_chain2()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_chain2());
-#endif
 
 TEST_CASE("Chain", "[flow.chain]")
 {

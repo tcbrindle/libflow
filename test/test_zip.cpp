@@ -30,9 +30,7 @@ constexpr bool test_zip3()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_zip3());
-#endif
 
 constexpr bool test_zip2()
 {
@@ -60,9 +58,7 @@ constexpr bool test_zip2()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_zip2());
-#endif
 
 TEST_CASE("zip", "[flow.zip]")
 {
@@ -91,9 +87,7 @@ constexpr bool test_enumerate()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_enumerate());
-#endif
 
 TEST_CASE("enumerate", "[flow.enumerate]")
 {

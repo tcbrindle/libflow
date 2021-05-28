@@ -110,9 +110,7 @@ constexpr bool test_drop()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_drop());
-#endif
 
 TEST_CASE("drop", "[flow.drop]")
 {

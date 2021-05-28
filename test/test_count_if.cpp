@@ -32,9 +32,7 @@ constexpr bool test_nonmember_count_if()
     auto is_one = [](int i) { return i == 1; };
     return flow::count_if(flow::of{1, 1, 1, 2, 3, 4, 1}, is_one) == 4;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_nonmember_count_if());
-#endif
 
 TEST_CASE("Member count_if()", "[flow.count_if]")
 {

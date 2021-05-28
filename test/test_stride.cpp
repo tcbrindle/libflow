@@ -87,9 +87,7 @@ constexpr bool test_stride()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_stride());
-#endif
 
 TEST_CASE("stride", "[flow.stride]")
 {

@@ -67,9 +67,7 @@ constexpr bool test_drop_while()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_drop_while());
-#endif
 
 TEST_CASE("drop_while", "[flow.drop_while]")
 {

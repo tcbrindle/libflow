@@ -34,9 +34,7 @@ constexpr bool test_equal()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_equal());
-#endif
 
 TEST_CASE("equal()", "[flow.equal]")
 {

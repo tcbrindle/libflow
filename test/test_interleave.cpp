@@ -60,9 +60,7 @@ constexpr bool test_interleave()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_interleave());
-#endif
 
 TEST_CASE("interleave", "[flow.interleave]")
 {

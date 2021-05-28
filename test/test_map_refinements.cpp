@@ -66,9 +66,7 @@ constexpr bool test_as()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_as());
-#endif
 
 TEST_CASE("flow::as()", "[flow.as]")
 {
@@ -127,9 +125,7 @@ constexpr bool test_unchecked_deref()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_unchecked_deref());
-#endif
 
 constexpr bool test_unchecked_deref_optional()
 {
@@ -285,9 +281,7 @@ constexpr bool test_elements()
 
     return flow::elements<2>(arr).equal(flow::of{3, 6, 9});
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_elements());
-#endif
 
 TEST_CASE("elements()", "[flow.elements]")
 {

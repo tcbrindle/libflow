@@ -56,9 +56,7 @@ constexpr bool test_cycle()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_cycle());
-#endif
 
 TEST_CASE("cycle", "[flow.cycle]")
 {

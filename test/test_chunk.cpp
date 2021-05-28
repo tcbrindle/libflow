@@ -81,9 +81,7 @@ constexpr bool test_chunk()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_chunk());
-#endif
 
 TEST_CASE("chunk()", "[flow.chunk]")
 {

@@ -22,9 +22,7 @@ constexpr bool test_iota_basic()
                 .take(5)
                 .equal(flow::of(0u, 1u, 2u, 3u, 4u));
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_iota_basic());
-#endif
 
 constexpr bool test_iota_bounded()
 {
@@ -79,9 +77,7 @@ constexpr bool test_iota_bounded()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_iota_bounded());
-#endif
 
 constexpr bool test_iota_step()
 {
@@ -159,9 +155,7 @@ constexpr bool test_iota_step()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_iota_step());
-#endif
 
 TEST_CASE("iota", "[flow.iota]")
 {
@@ -239,9 +233,7 @@ constexpr bool test_ints()
 
     return true;
 }
-#if !COMPILER_IS_MSVC
 static_assert(test_ints());
-#endif
 
 TEST_CASE("ints", "[flow.ints]")
 {
