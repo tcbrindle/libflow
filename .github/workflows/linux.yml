@@ -1,0 +1,73 @@
+name: linux
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        cxx: [g++-10, clang++-9]
+        build_type: [Debug, Release]
+        std: [17, 20]
+        os: [ubuntu-18.04, ubuntu-20.04]
+        include:
+          - cxx: g++-8
+            build_type: Debug
+            std: 17
+            install: sudo apt install g++-8
+            os: ubuntu-18.04
+          - cxx: g++-10
+            build_type: Debug
+            std: 17
+            os: ubuntu-18.04
+          - cxx: g++-10
+            build_type: Debug
+            std: 20
+            os: ubuntu-20.04
+          - cxx: clang++-9
+            build_type: Debug
+            std: 17
+            os: ubuntu-18.04
+          - cxx: clang++-11
+            build_type: Debug
+            std: 20
+            os: ubuntu-20.04
+          - cxx: clang++-11
+            build_type: Debug
+            std: 20
+            cxxflags: -stdlib=libc++
+            os: ubuntu-20.04
+            install: sudo apt install libc++-11-dev libc++abi-11-dev
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Create Build Environment
+      run: |
+        ${{matrix.install}}
+        cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Configure
+      working-directory: ${{runner.workspace}}/build
+      env:
+        CXX: ${{matrix.cxx}}
+        CXXFLAGS: ${{matrix.cxxflags}}
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}}  \
+              -DCMAKE_CXX_STANDARD=${{matrix.std}}  \
+              $GITHUB_WORKSPACE
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      run: cmake --build . --config ${{matrix.build_type}} -- -j2
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/build
+      run: ctest -C ${{matrix.build_type}}
+      env:
+        CTEST_OUTPUT_ON_FAILURE: True
