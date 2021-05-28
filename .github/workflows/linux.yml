@@ -15,10 +15,6 @@ jobs:
         build_type: [Debug, Release]
         std: [17, 20]
         os: [ubuntu-20.04]
-        exclude:
-          # Temporarily exclude GCC 9 and 10 due to ICE
-          - cxx: g++-9
-          - cxx: g++-10
         include:
           # Test Clang 9 on Ubuntu 18.04
           - cxx: clang++-9
