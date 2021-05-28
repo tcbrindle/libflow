@@ -11,38 +11,21 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        cxx: [g++-10, clang++-9]
+        cxx: [g++-9, g++-10, g++-11, clang++-10, clang++-11, clang++-12]
         build_type: [Debug, Release]
         std: [17, 20]
-        os: [ubuntu-18.04, ubuntu-20.04]
+        os: [ubuntu-20.04]
         include:
+          # GCC8 and Clang 9 on Ubuntu 18.04
           - cxx: g++-8
-            build_type: Debug
             std: 17
+            build_type: Debug
             install: sudo apt install g++-8
             os: ubuntu-18.04
-          - cxx: g++-10
-            build_type: Debug
-            std: 17
-            os: ubuntu-18.04
-          - cxx: g++-10
-            build_type: Debug
-            std: 20
-            os: ubuntu-20.04
           - cxx: clang++-9
-            build_type: Debug
             std: 17
+            build_type: Debug
             os: ubuntu-18.04
-          - cxx: clang++-11
-            build_type: Debug
-            std: 20
-            os: ubuntu-20.04
-          - cxx: clang++-11
-            build_type: Debug
-            std: 20
-            cxxflags: -stdlib=libc++
-            os: ubuntu-20.04
-            install: sudo apt install libc++-11-dev libc++abi-11-dev
 
     steps:
     - uses: actions/checkout@v2
