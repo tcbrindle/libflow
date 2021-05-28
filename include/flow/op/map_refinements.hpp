@@ -99,6 +99,27 @@ constexpr auto flow_base<D>::move() && -> decltype(auto)
     }
 }
 
+// as_const()
+
+inline constexpr auto as_const = [](auto&& flowable) {
+    static_assert(is_flowable<decltype(flowable)>,
+                  "Argument to flow::as_const() must be a Flowable type");
+    return FLOW_COPY(flow::from(FLOW_FWD(flowable))).as_const();
+};
+
+template <typename D>
+constexpr auto flow_base<D>::as_const() && -> decltype(auto)
+{
+    using I = item_t<D>;
+
+    if constexpr (std::is_lvalue_reference_v<I> &&
+                  !std::is_const_v<std::remove_reference_t<I>>) {
+        return consume().template as<std::remove_reference_t<I> const&>();
+    } else {
+        return consume();
+    }
+}
+
 // elements
 
 namespace detail {

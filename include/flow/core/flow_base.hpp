@@ -374,6 +374,18 @@ public:
     /// @return A flow adaptor which casts each item to an xvalue.
     constexpr auto move() && -> decltype(auto);
 
+    /// Consumes the flow, returning an adaptor which converts each reference
+    /// item to a const reference.
+    ///
+    /// If the flow's item type is an lvalue reference type `T&`, this returns
+    /// a new flow whose item type is `const T&`.
+    ///
+    /// If the flow's item type is not an lvalue reference, this adaptor has
+    /// no effect.
+    ///
+    /// @return A flow adaptor which converts each item to a const reference
+    constexpr auto as_const() && -> decltype(auto);
+
     /// Consumes the flow, returning a new flow which yields the same items
     /// but calls @func at each call to `next()`, passing it a const reference
     /// to the item.

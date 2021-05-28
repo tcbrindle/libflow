@@ -267,6 +267,67 @@ TEST_CASE("flow::move()", "[flow.move]")
 }
 
 /*
+ * as_const() tests
+ */
+struct Immovable {
+    Immovable() = default;
+    Immovable(Immovable&&) = delete;
+    Immovable& operator=(Immovable&&) = delete;
+};
+
+constexpr bool test_as_const()
+{
+    // Check that mutable lrefs become const lrefs
+    {
+        std::array arr{1, 2, 3};
+
+        [[maybe_unused]] auto f = flow::as_const(arr);
+
+        static_assert(std::is_same_v<flow::item_t<decltype(f)>, int const&>);
+    }
+
+    // Check that const lrefs stay const lrefs
+    {
+        std::array const arr{1, 2, 3};
+
+        auto f1 = flow::from(arr);
+        auto&& f2 = std::move(f1).as_const();
+
+        if (&f1 != &f2) { // Check that we're not even really moving
+            return false;
+        }
+
+        static_assert(std::is_same_v<flow::item_t<decltype(f2)>, int const&>);
+    }
+
+    // Check that non-references don't change
+    {
+        [[maybe_unused]] auto f = flow::ints().as_const();
+
+        static_assert(std::is_same_v<flow::item_t<decltype(f)>, flow::dist_t>);
+    }
+
+    // Check that we're not accidentally copying or moving anything
+    {
+        auto arr = std::array<Immovable, 3>{};
+
+        auto f = flow::from(arr).as_const();
+
+        static_assert(std::is_same_v<flow::item_t<decltype(f)>, Immovable const&>);
+
+        std::move(f).for_each([](Immovable const&) { /* pass */ });
+    }
+
+    return true;
+}
+static_assert(test_as_const());
+
+TEST_CASE("as_const()", "[flow.as_const]")
+{
+    REQUIRE(test_as_const());
+}
+
+/*
  * elements() tests
  */
 constexpr bool test_elements()
