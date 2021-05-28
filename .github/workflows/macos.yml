@@ -31,7 +31,7 @@ jobs:
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
-      run: cmake --build . --config ${{matrix.build_type}}
+      run: cmake --build . --config ${{matrix.build_type}} -- -j3
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
