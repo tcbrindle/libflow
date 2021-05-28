@@ -16,15 +16,11 @@ jobs:
         std: [17, 20]
         os: [ubuntu-20.04]
         exclude:
-          # Temporarily exclude GCC10 due to ICE
+          # Temporarily exclude GCC 9 and 10 due to ICE
+          - cxx: g++-9
           - cxx: g++-10
         include:
-          # GCC8 and Clang 9 on Ubuntu 18.04
-          - cxx: g++-8
-            std: 17
-            build_type: Debug
-            install: sudo apt install g++-8
-            os: ubuntu-18.04
+          # Test Clang 9 on Ubuntu 18.04
           - cxx: clang++-9
             std: 17
             build_type: Debug
