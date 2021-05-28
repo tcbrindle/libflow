@@ -1,0 +1,36 @@
+# Based on macos.yml from {fmt}
+# https://github.com/fmtlib/fmt/blob/master/.github/workflows/macos.yml
+
+name: macos
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: macos-10.15
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        std: [17, 20]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Configure
+      working-directory: ${{runner.workspace}}/build
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.shared}} \
+              -DCMAKE_CXX_STANDARD=${{matrix.std}} $GITHUB_WORKSPACE
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      run: cmake --build . --config ${{matrix.build_type}}
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/build
+      run: ctest -C ${{matrix.build_type}}
+      env:
+        CTEST_OUTPUT_ON_FAILURE: True
