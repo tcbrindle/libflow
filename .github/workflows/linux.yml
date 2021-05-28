@@ -15,6 +15,9 @@ jobs:
         build_type: [Debug, Release]
         std: [17, 20]
         os: [ubuntu-20.04]
+        exclude:
+          # Temporarily exclude GCC10 due to ICE
+          - cxx: g++-10
         include:
           # GCC8 and Clang 9 on Ubuntu 18.04
           - cxx: g++-8
