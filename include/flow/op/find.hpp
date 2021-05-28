@@ -28,6 +28,19 @@ template <typename Derived>
 template <typename T, typename Cmp>
 constexpr auto flow_base<Derived>::find(const T& item, Cmp cmp)
 {
+    // Workaround ICE on GCC9 and GCC10
+#if defined(__GNUC__) && !defined(__clang__) && (__GNUC__ >= 9) && (__GNUC__ < 11)
+
+    using ret_t = flow::next_t<Derived>;
+
+    while (auto m = derived().next()) {
+        if (invoke(cmp, *m, item)) {
+            return ret_t{*std::move(m)};
+        }
+    }
+
+    return ret_t{};
+#else
     struct out {
         next_t<Derived> val{};
         constexpr explicit operator bool() const { return !val; }
@@ -36,6 +49,7 @@ constexpr auto flow_base<Derived>::find(const T& item, Cmp cmp)
     return derived().try_for_each([&item, &cmp](auto m) {
       return invoke(cmp, *m, item) ? out{std::move(m)} : out{};
     }).val;
+#endif
 }
 
 }
