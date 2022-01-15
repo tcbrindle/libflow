@@ -1,4 +1,3 @@
-
 #ifndef FLOW_SOURCE_FROM_HPP_INCLUDED
 #define FLOW_SOURCE_FROM_HPP_INCLUDED
 
@@ -8,12 +7,45 @@
 namespace flow {
 
 namespace detail {
+namespace begin_cpo {
+
+using std::begin;
+
+struct fn {
+    template <typename R>
+    constexpr auto operator()(R&& rng) const
+        noexcept(noexcept(begin(FLOW_FWD(rng))))
+            -> decltype(begin(FLOW_FWD(rng)))
+    {
+        return begin(FLOW_FWD(rng));
+    }
+};
+
+} // namespace begin_cpo
+
+inline constexpr auto begin = begin_cpo::fn{};
+
+namespace end_cpo {
+
+using std::end;
+
+struct fn {
+    template <typename R>
+    constexpr auto operator()(R&& rng) const
+        noexcept(noexcept(end(FLOW_FWD(rng)))) -> decltype(end(FLOW_FWD(rng)))
+    {
+        return end(FLOW_FWD(rng));
+    }
+};
+
+} // namespace end_cpo
+
+inline constexpr auto end = end_cpo::fn{};
+template <typename R>
+using iterator_t = decltype(detail::begin(std::declval<R&>()));
 
 template <typename R>
-using iterator_t = decltype(std::begin(std::declval<R&>()));
-
-template <typename R>
-using sentinel_t = decltype(std::end(std::declval<R&>()));
+using sentinel_t = decltype(detail::end(std::declval<R&>()));
 
 template <typename R>
 using iter_reference_t = decltype(*std::declval<iterator_t<R>&>());
@@ -48,8 +80,8 @@ template <typename R>
 struct range_ref {
     constexpr range_ref(R& rng) : ptr_(std::addressof(rng)) {}
 
-    constexpr auto begin() const { return std::begin(*ptr_); }
-    constexpr auto end() const { return std::end(*ptr_); }
+    constexpr auto begin() const { return detail::begin(*ptr_); }
+    constexpr auto end() const { return detail::end(*ptr_); }
 
 private:
     R* ptr_;
@@ -65,7 +97,7 @@ template <typename R>
 struct stl_input_range_adaptor : flow_base<stl_input_range_adaptor<R>> {
 private:
     R rng_;
-    iterator_t<R> cur_ = std::begin(rng_);
+    iterator_t<R> cur_ = detail::begin(rng_);
 
 public:
     constexpr explicit stl_input_range_adaptor(R&& range)
@@ -79,7 +111,7 @@ public:
 
     constexpr auto next() -> maybe<iter_value_t<R>>
     {
-        if (cur_ != std::end(rng_)) {
+        if (cur_ != detail::end(rng_)) {
             auto val = *cur_;
             ++cur_;
             return {std::move(val)};
@@ -98,7 +130,7 @@ public:
         if constexpr (std::is_same_v<C, R>) {
             return std::move(rng_);
         } else {
-            return C(cur_, std::end(rng_));
+            return C(cur_, detail::end(rng_));
         }
     }
 };
@@ -111,7 +143,7 @@ public:
 
     constexpr auto next() -> maybe<detail::iter_reference_t<R>>
     {
-        if (cur_ != std::end(rng_)) {
+        if (cur_ != detail::end(rng_)) {
             return {*cur_++};
         }
         return {};
@@ -128,7 +160,7 @@ public:
         if constexpr (std::is_same_v<C, R>) {
             return std::move(rng_);
         } else {
-            return C(cur_, std::end(rng_));
+            return C(cur_, detail::end(rng_));
         }
     }
 
@@ -148,7 +180,7 @@ private:
     friend struct stl_fwd_range_adaptor;
 
     R rng_;
-    iterator_t<R> cur_ = std::begin(rng_);
+    iterator_t<R> cur_ = detail::begin(rng_);
 };
 
 template <typename R>
@@ -194,8 +226,8 @@ struct stl_bidir_range_adaptor : flow_base<stl_bidir_range_adaptor<R>> {
 
 private:
     R rng_;
-    iterator_t<R> first_ = std::begin(rng_);
-    iterator_t<R> last_ = std::end(rng_);
+    iterator_t<R> first_ = detail::begin(rng_);
+    iterator_t<R> last_ = detail::end(rng_);
 };
 
 template <typename R>
@@ -219,7 +251,7 @@ struct stl_ra_range_adaptor : flow_base<stl_ra_range_adaptor<R>> {
     constexpr auto next() -> maybe<iter_reference_t<R>>
     {
         if (idx_ < idx_back_) {
-            return {std::begin(rng_)[idx_++]};
+            return {detail::begin(rng_)[idx_++]};
         }
         return {};
     }
@@ -227,7 +259,7 @@ struct stl_ra_range_adaptor : flow_base<stl_ra_range_adaptor<R>> {
     constexpr auto next_back() -> maybe<iter_reference_t<R>>
     {
         if (idx_back_ > idx_ ) {
-            return {std::begin(rng_)[--idx_back_]};
+            return {detail::begin(rng_)[--idx_back_]};
         }
         return {};
     }
@@ -250,7 +282,7 @@ struct stl_ra_range_adaptor : flow_base<stl_ra_range_adaptor<R>> {
         if constexpr (std::is_same_v<C, R>) {
             return std::move(rng_);
         } else {
-            return C(std::begin(rng_) + idx_, std::end(rng_));
+            return C(detail::begin(rng_) + idx_, detail::end(rng_));
         }
     }
 
@@ -276,7 +308,7 @@ private:
 
     R rng_{};
     dist_t idx_ = 0;
-    dist_t idx_back_ = std::distance(std::begin(rng_), std::end(rng_));
+    dist_t idx_back_ = std::distance(detail::begin(rng_), detail::end(rng_));
 };
 
 template <typename R, typename = std::enable_if_t<detail::is_stl_range<R>>>
