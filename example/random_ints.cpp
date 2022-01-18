@@ -1,11 +1,15 @@
 
-// An example of writing a custom flow, in this case one that generates
-// an endless sequence of random ints within a given interval
+// Copyright (c) 2022 Tristan Brindle (tcbrindle at gmail dot com)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
 #include <flow.hpp>
 
 #include <iostream>
 #include <random>
+
+// An example of writing a custom flow, in this case one that generates
+// an endless sequence of random ints within a given interval
 
 struct random_ints : flow::flow_base<random_ints> {
 

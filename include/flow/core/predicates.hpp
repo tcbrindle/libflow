@@ -1,6 +1,10 @@
 
-#ifndef FLOW_CORE_COMPARATORS_HPP_INCLUDED
-#define FLOW_CORE_COMPARATORS_HPP_INCLUDED
+// Copyright (c) 2022 Tristan Brindle (tcbrindle at gmail dot com)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+#ifndef FLOW_CORE_PREDICATES_HPP_INCLUDED
+#define FLOW_CORE_PREDICATES_HPP_INCLUDED
 
 #include <flow/core/functional.hpp>
 #include <flow/core/macros.hpp>

@@ -1,14 +1,18 @@
 
+// Copyright (c) 2022 Tristan Brindle (tcbrindle at gmail dot com)
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+#include <flow.hpp>
+
+#include <iostream>
+
 /*
  * Taken from
  * LeetCode 176 Problem 1 - Count Negative Numbers in a Sorted Matrix
  * YouTube video by Conor Hoekstra (code_report)
  * https://youtu.be/pDbDtGn1PXk
  */
-
-#include <flow.hpp>
-
-#include <iostream>
 
 int main()
 {
