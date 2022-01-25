@@ -2,12 +2,12 @@
 name: libflow
 version: 0.1.0-a.0.z
 summary: Rust-style iterator library for C++17/20
-license: other: BSL-1.0 ; Boost Software License 1.0.
+license: BSL-1.0 ; Boost Software License 1.0.
 description-file: README.md
 url: https://github.com/tcbrindle/libflow
 email: t.c.brindle@gmail.com
 build-error-email: t.c.brindle@gmail.com
-builds: gcc-9+ clang12+ msvc-16.10+
+builds: gcc-9+ clang-12+ msvc-16.10+
 builds: -( +windows &clang ) ; coroutines not supported
 depends: * build2 >= 0.14.0
 depends: * bpkg >= 0.14.0
