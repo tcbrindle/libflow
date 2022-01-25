@@ -1,0 +1,12 @@
+: 1
+name: libflow
+version: 0.1.0-a.0.z
+summary: flow C++ library
+license: other: proprietary ; Not free/open source.
+description-file: README.md
+url: https://example.org/libflow
+email: t.c.brindle@gmail.com
+#build-error-email: t.c.brindle@gmail.com
+depends: * build2 >= 0.14.0
+depends: * bpkg >= 0.14.0
+#depends: libhello ^1.0.0

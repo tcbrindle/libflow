@@ -1,0 +1,3 @@
+import libs = libflow%lib{flow}
+
+exe{test-libflow}: {hxx ixx txx cxx}{**} $libs testscript{**}
