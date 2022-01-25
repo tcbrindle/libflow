@@ -11,11 +11,22 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        cxx: [g++-9, g++-10, g++-11, clang++-10, clang++-12] # see below for clang-11
+        cxx: [g++-9, g++-10, clang++-10, clang++-12] # see below for clang-11
         build_type: [Debug, Release]
         std: [17, 20]
         os: [ubuntu-20.04]
         include:
+          # Test GCC 11 on Ubuntu 18.04
+          - cxx: g++-11
+            std: 17
+            build_type: Debug
+            os: ubuntu-18.04
+            install: sudo apt install g++-11
+          - cxx: g++-11
+            std: 20
+            build_type: Debug
+            os: ubuntu-18.04
+            install: sudo apt install g++-11
           # Test Clang 9 on Ubuntu 18.04
           - cxx: clang++-9
             std: 17
