@@ -8,6 +8,5 @@ url: https://github.com/tcbrindle/libflow
 email: t.c.brindle@gmail.com
 build-error-email: t.c.brindle@gmail.com
 builds: gcc-9+ clang-12+ msvc-16.10+
-builds: -( +windows &clang ) ; coroutines not supported
 depends: * build2 >= 0.14.0
 depends: * bpkg >= 0.14.0
