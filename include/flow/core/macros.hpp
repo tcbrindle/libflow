@@ -20,17 +20,21 @@
 #define FLOW_NO_UNIQUE_ADDRESS
 #endif
 
-#if defined(__cpp_coroutines) || defined(__cpp_impl_coroutine)
-#  if defined(__has_include) // If we can, check for <coroutine> or <experimental/coroutine>
+#if defined(__cpp_impl_coroutine)  // We have language support for C++20 coroutines
+#  if defined(__has_include)
 #    if __has_include(<coroutine>)
 #      define FLOW_HAVE_COROUTINES
 #      define FLOW_HAVE_CPP20_COROUTINES
-#    elif __has_include(<experimental/coroutine>)
-#      define FLOW_HAVE_COROUTINES
-#      define FLOW_HAVE_TS_COROUTINES
-#    endif // __has_include(<coroutine>)
+#    endif  // __has_include(<coroutine>)
 #  endif // __has_include
-#endif // __cpp_impl_coroutine
+#elif defined(__cpp_coroutines) // We have language support for TS coroutines
+#  if defined(__has_include)
+#    if __has_include(<experimental/coroutine>)
+#        define FLOW_HAVE_COROUTINES
+#        define FLOW_HAVE_TS_COROUTINES
+#    endif // __has_include(<experimental/coroutine>)
+#  endif // __has_include
+#endif
 
 #define FLOW_FWD(x) (static_cast<decltype(x)&&>(x))
 

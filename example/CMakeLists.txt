@@ -7,9 +7,6 @@ function(add_example NAME)
         target_compile_options(example_${NAME} PRIVATE -fcoroutines-ts)
     endif()
 
-    if (MSVC)
-        target_compile_options(example_${NAME} PRIVATE /await)
-    endif()
 endfunction()
 
 add_example(custom_adaptor)
