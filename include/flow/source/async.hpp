@@ -12,16 +12,30 @@
 
 #include <flow/core/flow_base.hpp>
 
+#ifdef FLOW_HAVE_CPP20_COROUTINES
+#include <coroutine>
+#else
 #include <experimental/coroutine>
+#endif
 
 namespace flow {
+
+namespace detail {
+
+#ifdef FLOW_HAVE_CPP20_COROUTINES
+namespace coro_ns = std;
+#else
+namespace coro_ns = std::experimental;
+#endif
+
+}
 
 template <typename T>
 struct async : flow_base<async<T>>
 {
     struct promise_type;
 
-    using handle_type = std::experimental::coroutine_handle<promise_type>;
+    using handle_type = detail::coro_ns::coroutine_handle<promise_type>;
 
     struct promise_type {
     private:
@@ -29,23 +43,23 @@ struct async : flow_base<async<T>>
 
     public:
         auto initial_suspend() {
-            return std::experimental::suspend_always{};
+            return detail::coro_ns::suspend_always{};
         };
 
         auto final_suspend() noexcept {
-            return std::experimental::suspend_always{};
+            return detail::coro_ns::suspend_always{};
         }
 
         auto yield_value(std::remove_reference_t<T>& val)
         {
             value = maybe<T>(val);
-            return std::experimental::suspend_always{};
+            return detail::coro_ns::suspend_always{};
         }
 
         auto yield_value(remove_cvref_t<T>&& val)
         {
             value = maybe<T>(std::move(val));
-            return std::experimental::suspend_always{};
+            return detail::coro_ns::suspend_always{};
         }
 
         auto extract_value() -> maybe<T>
@@ -67,7 +81,7 @@ struct async : flow_base<async<T>>
 
         auto return_void()
         {
-            return std::experimental::suspend_never{};
+            return detail::coro_ns::suspend_never{};
         }
     };
 
