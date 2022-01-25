@@ -79,9 +79,5 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         -ftemplate-backtrace-limit=0)
 endif()
 
-if (MSVC)
-    target_compile_options(test-libflow PRIVATE /await)
-endif()
-
 include(Catch)
 catch_discover_tests(test-libflow)
