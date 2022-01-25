@@ -42,12 +42,6 @@ jobs:
             std: 17
             build_type: Debug
             os: ubuntu-18.04
-          - cxx: clang++-9
-            std: 17
-            build_type: Debug
-            os: ubuntu-18.04
-            cxx_flags: -stdlib=libc++
-            install: sudo apt install libc++-9-dev libc++abi-9-dev
           # Test Clang 11 with both libstdc++ and libc++
           - cxx: clang++-11
             std: 17
